@@ -91,4 +91,4 @@ application.add_handler(MessageHandler(filters.Text() & ~filters.Command(), log_
 application.add_handler(CommandHandler("summarize", summarize_day))
 
 # Start the bot
-application.run_polling()Ï
+application.run_polling()
