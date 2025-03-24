@@ -9,6 +9,9 @@ from decouple import config
 TOKEN = config('BOT_TOKEN')
 application = Application.builder().token(TOKEN).build()
 
+# Define Hong Kong timezone (UTC+8)
+HK_TIMEZONE = timezone(timedelta(hours=8))
+
 # Store messages by chat ID
 messages = {}  # Dictionary to store messages per chat
 
@@ -20,7 +23,7 @@ async def log_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         chat_id = update.message.chat_id
         print(f"Message received in chat {chat_id}: {update.message.text}")
         message = update.message.text
-        timestamp = update.message.date
+        timestamp = update.message.date  # Telegram provides UTC time
 
         if chat_id not in messages:
             messages[chat_id] = []
@@ -36,7 +39,9 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
         await update.message.reply_text(f"No messages to summarize for {period_name} in this chat!")
         return
 
-    day_messages = [msg["text"] for msg in messages[chat_id] if start_time <= msg["time"] < end_time]
+    # Convert message timestamps to HK time for comparison
+    day_messages = [msg["text"] for msg in messages[chat_id] if
+                    start_time <= msg["time"].astimezone(HK_TIMEZONE) < end_time]
     if not day_messages:
         await update.message.reply_text(f"No messages to summarize for {period_name} in this chat!")
         return
@@ -55,54 +60,54 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
 
 # Command to summarize full day (00:00 yesterday - now)
 async def summarize_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(HK_TIMEZONE)  # Use HK timezone
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
     await summarize_in_range(update, start_of_day, now, "全日")
 
 
 # Command to summarize morning (06:00 - 12:00 today)
 async def summarize_morning(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    now = datetime.now(timezone.utc)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)  # Today’s midnight
+    now = datetime.now(HK_TIMEZONE)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     morning_start = start_of_day.replace(hour=6, minute=0)
     morning_end = start_of_day.replace(hour=12, minute=0)
-    if now < morning_end:  # If it’s before 12:00, end at now
+    if now < morning_end:
         morning_end = now
     await summarize_in_range(update, morning_start, morning_end, "今日早晨 (06:00-12:00)")
 
 
 # Command to summarize afternoon (12:00 - 18:00 today)
 async def summarize_afternoon(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    now = datetime.now(timezone.utc)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)  # Today’s midnight
+    now = datetime.now(HK_TIMEZONE)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     afternoon_start = start_of_day.replace(hour=12, minute=0)
     afternoon_end = start_of_day.replace(hour=18, minute=0)
-    if now < afternoon_end:  # If it’s before 18:00, end at now
+    if now < afternoon_end:
         afternoon_end = now
     await summarize_in_range(update, afternoon_start, afternoon_end, "今日下午 (12:00-18:00)")
 
 
 # Command to summarize night (18:00 today - 05:59 tomorrow or now)
 async def summarize_night(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    now = datetime.now(timezone.utc)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)  # Today’s midnight
+    now = datetime.now(HK_TIMEZONE)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     night_start = start_of_day.replace(hour=18, minute=0)
     night_end = start_of_day + timedelta(days=1)  # Tomorrow’s 00:00
-    if now < night_end:  # If it’s before 00:00 tomorrow, end at now
+    if now < night_end:
         night_end = now
     await summarize_in_range(update, night_start, night_end, "今晚 (18:00-05:59)")
 
 
 # Command to summarize last hour
 async def summarize_last_hour(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(HK_TIMEZONE)
     last_hour_start = now - timedelta(hours=1)
     await summarize_in_range(update, last_hour_start, now, "過去一小時")
 
 
 # Command to summarize last 3 hours
 async def summarize_last_3_hours(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(HK_TIMEZONE)
     last_3_hours_start = now - timedelta(hours=3)
     await summarize_in_range(update, last_3_hours_start, now, "過去三小時")
 
