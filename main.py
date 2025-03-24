@@ -53,40 +53,44 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
 
 
-# Command to summarize full day (00:00 - now)
+# Command to summarize full day (00:00 yesterday - now)
 async def summarize_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(timezone.utc)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
     await summarize_in_range(update, start_of_day, now, "全日")
 
 
-# Command to summarize morning (06:00 - 12:00)
+# Command to summarize morning (06:00 - 12:00 today)
 async def summarize_morning(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(timezone.utc)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)  # Today’s midnight
     morning_start = start_of_day.replace(hour=6, minute=0)
     morning_end = start_of_day.replace(hour=12, minute=0)
-    await summarize_in_range(update, morning_start, morning_end, "早晨 (06:00-12:00)")
+    if now < morning_end:  # If it’s before 12:00, end at now
+        morning_end = now
+    await summarize_in_range(update, morning_start, morning_end, "今日早晨 (06:00-12:00)")
 
 
-# Command to summarize afternoon (12:00 - 18:00)
+# Command to summarize afternoon (12:00 - 18:00 today)
 async def summarize_afternoon(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(timezone.utc)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)  # Today’s midnight
     afternoon_start = start_of_day.replace(hour=12, minute=0)
     afternoon_end = start_of_day.replace(hour=18, minute=0)
-    await summarize_in_range(update, afternoon_start, afternoon_end, "下午 (12:00-18:00)")
+    if now < afternoon_end:  # If it’s before 18:00, end at now
+        afternoon_end = now
+    await summarize_in_range(update, afternoon_start, afternoon_end, "今日下午 (12:00-18:00)")
 
 
-# Command to summarize night (18:00 - 05:59 next day)
+# Command to summarize night (18:00 today - 05:59 tomorrow or now)
 async def summarize_night(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(timezone.utc)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)  # Today’s midnight
     night_start = start_of_day.replace(hour=18, minute=0)
-    night_end = start_of_day + timedelta(days=1)  # Until 00:00 today
-    if now < night_end:  # Adjust end time to now if still in the night period
+    night_end = start_of_day + timedelta(days=1)  # Tomorrow’s 00:00
+    if now < night_end:  # If it’s before 00:00 tomorrow, end at now
         night_end = now
-    await summarize_in_range(update, night_start, night_end, "夜晚 (18:00-05:59)")
+    await summarize_in_range(update, night_start, night_end, "今晚 (18:00-05:59)")
 
 
 # Command to summarize last hour
