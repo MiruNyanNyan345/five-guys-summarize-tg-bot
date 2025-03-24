@@ -10,56 +10,98 @@ TOKEN = config('BOT_TOKEN')
 application = Application.builder().token(TOKEN).build()
 
 # Store messages by chat ID
-messages = {}  # Changed to a dictionary to store messages per chat
+messages = {}  # Dictionary to store messages per chat
+
 
 # Handle received messages
 async def log_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     print("log_message triggered!")
     if update.message and update.message.text:
-        chat_id = update.message.chat_id  # Get the chat ID (group or private)
+        chat_id = update.message.chat_id
         print(f"Message received in chat {chat_id}: {update.message.text}")
         message = update.message.text
-        timestamp = update.message.date  # This is offset-aware (UTC)
+        timestamp = update.message.date
 
-        # Initialize the list for this chat_id if it doesn't exist
         if chat_id not in messages:
             messages[chat_id] = []
 
-        # Append the message to the chat-specific list
         messages[chat_id].append({"text": message, "time": timestamp})
         print(f"Messages list for chat {chat_id}: {messages[chat_id]}")
 
-# Command to summarize daily messages
-async def summarize_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    chat_id = update.message.chat_id  # Get the current chat ID
-    now = datetime.now(timezone.utc)  # Make now offset-aware (UTC)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
-    end_of_day = now
 
-    # Check if there are messages for this chat_id
+# Helper function to summarize messages in a given time range
+async def summarize_in_range(update: Update, start_time: datetime, end_time: datetime, period_name: str) -> None:
+    chat_id = update.message.chat_id
     if chat_id not in messages or not messages[chat_id]:
-        await update.message.reply_text("No messages to summarize from yesterday in this chat!")
+        await update.message.reply_text(f"No messages to summarize for {period_name} in this chat!")
         return
 
-    # Filter messages for this chat within the time range
-    day_messages = [msg["text"] for msg in messages[chat_id] if start_of_day <= msg["time"] < end_of_day]
+    day_messages = [msg["text"] for msg in messages[chat_id] if start_time <= msg["time"] < end_time]
     if not day_messages:
-        await update.message.reply_text("No messages to summarize from yesterday in this chat!")
+        await update.message.reply_text(f"No messages to summarize for {period_name} in this chat!")
         return
 
-    # Send a "please wait" message
     waiting_message = await update.message.reply_text("等一等，我諗緊嘢… ⏳")
-
-    text_to_summarize = "\n".join(day_messages)  # Join messages with newlines
+    text_to_summarize = "\n".join(day_messages)
     summary = get_ai_summary(text_to_summarize)
 
-    # Edit the waiting message with the summary or error
+    formatted_start = start_time.strftime("%Y-%m-%d %H:%M")
+    formatted_end = end_time.strftime("%Y-%m-%d %H:%M")
     if summary and summary != '系統想方加(出錯)，好對唔住':
-        formatted_start = start_of_day.strftime("%Y-%m-%d %H:%M")
-        formatted_end = end_of_day.strftime("%Y-%m-%d %H:%M")
-        await waiting_message.edit_text(f"由{formatted_start} - {formatted_end}嘅對話總結為: 📝\n{summary}")
+        await waiting_message.edit_text(f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}")
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
+
+
+# Command to summarize full day (00:00 - now)
+async def summarize_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(timezone.utc)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    await summarize_in_range(update, start_of_day, now, "全日")
+
+
+# Command to summarize morning (06:00 - 12:00)
+async def summarize_morning(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(timezone.utc)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    morning_start = start_of_day.replace(hour=6, minute=0)
+    morning_end = start_of_day.replace(hour=12, minute=0)
+    await summarize_in_range(update, morning_start, morning_end, "早晨 (06:00-12:00)")
+
+
+# Command to summarize afternoon (12:00 - 18:00)
+async def summarize_afternoon(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(timezone.utc)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    afternoon_start = start_of_day.replace(hour=12, minute=0)
+    afternoon_end = start_of_day.replace(hour=18, minute=0)
+    await summarize_in_range(update, afternoon_start, afternoon_end, "下午 (12:00-18:00)")
+
+
+# Command to summarize night (18:00 - 05:59 next day)
+async def summarize_night(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(timezone.utc)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    night_start = start_of_day.replace(hour=18, minute=0)
+    night_end = start_of_day + timedelta(days=1)  # Until 00:00 today
+    if now < night_end:  # Adjust end time to now if still in the night period
+        night_end = now
+    await summarize_in_range(update, night_start, night_end, "夜晚 (18:00-05:59)")
+
+
+# Command to summarize last hour
+async def summarize_last_hour(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(timezone.utc)
+    last_hour_start = now - timedelta(hours=1)
+    await summarize_in_range(update, last_hour_start, now, "過去一小時")
+
+
+# Command to summarize last 3 hours
+async def summarize_last_3_hours(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(timezone.utc)
+    last_3_hours_start = now - timedelta(hours=3)
+    await summarize_in_range(update, last_3_hours_start, now, "過去三小時")
+
 
 # Summarize text using DeepSeek API
 def get_ai_summary(text: str) -> str:
@@ -73,22 +115,25 @@ def get_ai_summary(text: str) -> str:
             ],
             stream=False
         )
-        summary = response.choices[0].message.content
-        return summary
+        return response.choices[0].message.content
     except openai.APIError as e:
-        # Capture API-related errors
         print(f"API Error: {e}")
         if hasattr(e, 'response') and e.response:
             print(f"Error details: {e.response.text}")
             return '系統想方加(出錯)，好對唔住'
     except Exception as e:
-        # Capture other unexpected errors
         print(f"Other Error: {e}")
         return '系統想方加(出錯)，好對唔住'
+
 
 # Register handlers
 application.add_handler(MessageHandler(filters.Text() & ~filters.Command(), log_message))
 application.add_handler(CommandHandler("summarize", summarize_day))
+application.add_handler(CommandHandler("summarize_morning", summarize_morning))
+application.add_handler(CommandHandler("summarize_afternoon", summarize_afternoon))
+application.add_handler(CommandHandler("summarize_night", summarize_night))
+application.add_handler(CommandHandler("summarize_last_hour", summarize_last_hour))
+application.add_handler(CommandHandler("summarize_last_3_hours", summarize_last_3_hours))
 
 # Start the bot
 application.run_polling()
