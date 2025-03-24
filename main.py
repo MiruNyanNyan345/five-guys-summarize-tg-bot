@@ -45,7 +45,9 @@ async def summarize_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     # Edit the waiting message with the summary or error
     if summary and summary != '系統想方加(出錯)，好對唔住':
-        await waiting_message.edit_text(f"由{start_of_day} - {end_of_day}嘅對話總結為: 📝\n{summary}")
+        formatted_start = start_of_day.strftime("%Y-%m-%d %H:%M")
+        formatted_end = end_of_day.strftime("%Y-%m-%d %H:%M")
+        await waiting_message.edit_text(f"由{formatted_start} - {formatted_end}嘅對話總結為: 📝\n{summary}")
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
 
