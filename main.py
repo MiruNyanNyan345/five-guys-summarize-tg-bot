@@ -1,19 +1,19 @@
 from datetime import datetime, timedelta, timezone  # Add timezone
-
 import openai
 from openai import OpenAI
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, CommandHandler, ContextTypes
 from decouple import config
-# 設定 Telegram Bot Token
+
+# Set Telegram Bot Token
 TOKEN = config('BOT_TOKEN')
 application = Application.builder().token(TOKEN).build()
 
-# 儲存訊息
+# Store messages
 messages = []
 
 
-# 處理接收到的訊息
+# Handle received messages
 async def log_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     print("log_message triggered!")
     if update.message and update.message.text:
@@ -24,51 +24,61 @@ async def log_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         print(f"Messages list: {messages}")
 
 
-# 總結一天訊息的命令
+# Command to summarize daily messages
 async def summarize_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     global messages
     # Use UTC timezone for consistency with Telegram's timestamps
     now = datetime.now(timezone.utc)  # Make now offset-aware (UTC)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
-    end_of_day = start_of_day + timedelta(days=2)
+    end_of_day = now
 
     day_messages = [msg["text"] for msg in messages if start_of_day <= msg["time"] < end_of_day]
     if not day_messages:
-        await update.message.reply_text("昨天沒有訊息可總結！")
+        await update.message.reply_text("No messages to summarize from yesterday!")
         return
+
+    # Send a "please wait" message
+    waiting_message = await update.message.reply_text("等一等，我諗緊嘢… ⏳")
 
     text_to_summarize = "\n".join(day_messages)
     summary = get_ai_summary(text_to_summarize)
-    await update.message.reply_text(f"昨天的討論總結：\n{summary}")
+
+    # Edit the waiting message with the summary or error
+    if summary and summary != '系統想方加(出錯)，好對唔住':
+        await waiting_message.edit_text(f"由{start_of_day} - {end_of_day}嘅對話總結為: 📝\n{summary}")
+    else:
+        await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
 
 
-# 使用 Hugging Face API 總結
+# Summarize text using DeepSeek API
 def get_ai_summary(text: str) -> str:
-
     client = OpenAI(api_key=config("API_KEY"), base_url="https://api.deepseek.com")
     try:
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
-                {"role": "user", "content": f'用繁體中文和口語化的廣東話總結這段文字：{text}'},
+                {"role": "user",
+                 "content": f'用繁體中文同香港式口語去總結以下對話，可以生動啲同搞笑啲: {text}'},
             ],
             stream=False
         )
         summary = response.choices[0].message.content
         return summary
     except openai.APIError as e:
-        # 捕獲 API 相關錯誤
-        print(f"API 錯誤：{e}")
+        # Capture API-related errors
+        print(f"API Error: {e}")
         if hasattr(e, 'response') and e.response:
-            print(f"錯誤詳情：{e.response.text}")
+            print(f"Error details: {e.response.text}")
+            return '系統想方加(出錯)，好對唔住'
     except Exception as e:
-        # 捕獲其他意外錯誤
-        print(f"其他錯誤：{e}")
+        # Capture other unexpected errors
+        print(f"Other Error: {e}")
+        return '系統想方加(出錯)，好對唔住'
 
 
-# 註冊處理器
+# Register handlers
 application.add_handler(MessageHandler(filters.Text() & ~filters.Command(), log_message))
 application.add_handler(CommandHandler("summarize", summarize_day))
 
-# 啟動機器人
+# Start the bot
 application.run_polling()
