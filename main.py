@@ -204,7 +204,7 @@ def get_ai_apology() -> str:
             model="deepseek-chat",
             messages=[
                 {"role": "user",
-                 "content": "用繁體中文同香港式口語去道歉，內容要每次都唔同，搞笑但唔會得罪人嘅道歉；要有啲emoji；字數30以下；唔洗講返啲要求出來；"},
+                 "content": "用繁體中文同香港式口語去道歉，內容要每次都唔同，搞笑但唔會得罪人嘅道歉；要有啲emoji；字數30以下；"},
             ],
             stream=False
         )
