@@ -175,7 +175,7 @@ async def apologize(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     print(f"Generated apology for chat {chat_id}: {apology}")
 
     if apology and apology != '哎呀，道歉失敗，唔好打我🙏':
-        await waiting_message.edit_text(apology, parse_mode='MarkdownV2')
+        await waiting_message.edit_text(apology)
     else:
         await waiting_message.edit_text('哎呀，道歉失敗，唔好打我🙏')
 
