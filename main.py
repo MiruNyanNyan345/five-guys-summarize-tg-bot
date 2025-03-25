@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta, timezone
-import openai
-from openai import OpenAI
+import sqlite3
+import os
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, CommandHandler, ContextTypes
 from decouple import config
+from openai import OpenAI
 
 # Set Telegram Bot Token
 TOKEN = config('BOT_TOKEN')
@@ -12,59 +13,80 @@ application = Application.builder().token(TOKEN).build()
 # Define Hong Kong timezone (UTC+8)
 HK_TIMEZONE = timezone(timedelta(hours=8))
 
-# Store messages by chat ID
-messages = {}  # Dictionary to store messages per chat
+# SQLite database path (configurable for Railway volumes)
+DB_PATH = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "/data") + "/messages.db"
+
+# Initialize SQLite database
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat_id INTEGER,
+            user_name TEXT,
+            text TEXT,
+            timestamp TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+# Run database initialization at startup
+init_db()
 
 # Handle received messages
 async def log_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    print("log_message triggered!")
     if update.message and update.message.text:
         chat_id = update.message.chat_id
-        user = update.message.from_user  # Get the user who sent the message
+        user = update.message.from_user
         message = update.message.text
-        timestamp = update.message.date
+        timestamp = update.message.date.isoformat()  # Store as ISO string
 
         # Extract user info
-        # Extract user’s full name (first_name + last_name if available)
         user_name = user.first_name if user.first_name else '唔知邊條粉蛋'
         if user.last_name:
-            user_name += " " + user.last_name  # Combine first and last name
-        print(f"Message received in chat {chat_id} from {user_name}: {message}")
+            user_name += " " + user.last_name
 
-        if chat_id not in messages:
-            messages[chat_id] = []
-
-        # Store message with user info
-        messages[chat_id].append({
-            "text": message,
-            "time": timestamp,
-            "user_name": user_name
-        })
-        print(f"Messages list for chat {chat_id}: {messages[chat_id]}")
+        # Insert message into SQLite
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO messages (chat_id, user_name, text, timestamp) VALUES (?, ?, ?, ?)",
+            (chat_id, user_name, message, timestamp)
+        )
+        conn.commit()
+        conn.close()
 
 # Helper function to summarize messages in a given time range
 async def summarize_in_range(update: Update, start_time: datetime, end_time: datetime, period_name: str) -> None:
     chat_id = update.message.chat_id
-    if chat_id not in messages or not messages[chat_id]:
+
+    # Query messages from SQLite
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT user_name, text, timestamp FROM messages
+        WHERE chat_id = ? AND timestamp >= ? AND timestamp < ?
+        ORDER BY timestamp ASC
+    """, (chat_id, start_time.isoformat(), end_time.isoformat()))
+    rows = cursor.fetchall()
+    conn.close()
+
+    if not rows:
         await update.message.reply_text(f"No messages to summarize for {period_name} in this chat!")
         return
 
-    # Prepend username to each message text
-    day_messages = [
-        f"{msg['user_name']}: {msg['text']}"
-        for msg in messages[chat_id]
-        if start_time <= msg["time"].astimezone(HK_TIMEZONE) < end_time
-    ]
-    if not day_messages:
-        await update.message.reply_text(f"No messages to summarize for {period_name} in this chat!")
-        return
+    # Format messages with username
+    day_messages = [f"{row[0]}: {row[1]}" for row in rows]
+    text_to_summarize = "\n".join(day_messages)
 
+    # Get AI summary
     waiting_message = await update.message.reply_text("等一等，我諗緊嘢… ⏳")
-    text_to_summarize = "\n".join(day_messages)  # Concatenate with newlines
     summary = get_ai_summary(text_to_summarize)
 
-    formatted_start = start_time.strftime("%Y-%m-%d %H:%M")
-    formatted_end = end_time.strftime("%Y-%m-%d %H:%M")
+    formatted_start = start_time.astimezone(HK_TIMEZONE).strftime("%Y-%m-%d %H:%M")
+    formatted_end = end_time.astimezone(HK_TIMEZONE).strftime("%Y-%m-%d %H:%M")
     if summary and summary != '系統想方加(出錯)，好對唔住':
         await waiting_message.edit_text(f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}")
     else:
@@ -131,13 +153,8 @@ def get_ai_summary(text: str) -> str:
             stream=False
         )
         return response.choices[0].message.content
-    except openai.APIError as e:
-        print(f"API Error: {e}")
-        if hasattr(e, 'response') and e.response:
-            print(f"Error details: {e.response.text}")
-            return '系統想方加(出錯)，好對唔住'
     except Exception as e:
-        print(f"Other Error: {e}")
+        print(f"Error in get_ai_summary: {e}")
         return '系統想方加(出錯)，好對唔住'
 
 # Register handlers
@@ -150,4 +167,5 @@ application.add_handler(CommandHandler("summarize_last_hour", summarize_last_hou
 application.add_handler(CommandHandler("summarize_last_3_hours", summarize_last_3_hours))
 
 # Start the bot
-application.run_polling()
+if __name__ == "__main__":
+    application.run_polling()
