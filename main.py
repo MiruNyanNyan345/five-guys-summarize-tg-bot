@@ -26,9 +26,9 @@ DB_PATH = os.path.join(DB_DIR, "messages.db")  # Full path with filename
 def ensure_db_directory():
     try:
         os.makedirs(DB_DIR, exist_ok=True)
-        logger.info(f"Database directory ensured at {DB_DIR}")
+        print(f"Database directory ensured at {DB_DIR}")
     except Exception as e:
-        logger.error(f"Failed to create database directory {DB_DIR}: {e}")
+        print(f"Failed to create database directory {DB_DIR}: {e}")
         raise
 
 # Initialize SQLite database
@@ -48,16 +48,16 @@ def init_db():
         """)
         conn.commit()
         conn.close()
-        logger.info(f"Database initialized at {DB_PATH}")
+        print(f"Database initialized at {DB_PATH}")
     except sqlite3.OperationalError as e:
-        logger.error(f"Failed to initialize database at {DB_PATH}: {e}")
+        print(f"Failed to initialize database at {DB_PATH}: {e}")
         raise
 
 # Run database initialization at startup
 try:
     init_db()
 except Exception as e:
-    logger.error(f"Startup failed: {e}")
+    print(f"Startup failed: {e}")
     exit(1)
 
 # Handle received messages
@@ -82,7 +82,7 @@ async def log_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             conn.commit()
             conn.close()
         except sqlite3.OperationalError as e:
-            logger.error(f"Failed to log message to database: {e}")
+            print(f"Failed to log message to database: {e}")
             await update.message.reply_text("哎呀，儲存訊息時出錯！請稍後再試。")
 
 # Helper function to summarize messages in a given time range
@@ -100,7 +100,7 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
         rows = cursor.fetchall()
         conn.close()
     except sqlite3.OperationalError as e:
-        logger.error(f"Failed to query database: {e}")
+        print(f"Failed to query database: {e}")
         await update.message.reply_text("哎呀，讀取訊息時出錯！請稍後再試。")
         return
 
@@ -111,15 +111,14 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
     day_messages = [f"{row[0]}: {row[1]}" for row in rows]
     text_to_summarize = "\n".join(day_messages)
 
-    waiting_message = await update.message.reply_text("等一等，我諗緊嘢… ⏳")
+    waiting_message = await update.message.reply_text("等一等，幫緊你...幫緊你... ⏳")
     summary = get_ai_summary(text_to_summarize)
 
     formatted_start = start_time.astimezone(HK_TIMEZONE).strftime("%Y-%m-%d %H:%M")
     formatted_end = end_time.astimezone(HK_TIMEZONE).strftime("%Y-%m-%d %H:%M")
     if summary and summary != '系統想方加(出錯)，好對唔住':
         await waiting_message.edit_text(
-            f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}",
-            parse_mode='MarkdownV2'
+            f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}"
         )
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
@@ -168,8 +167,17 @@ async def summarize_last_3_hours(update: Update, context: ContextTypes.DEFAULT_T
     await summarize_in_range(update, last_3_hours_start, now, "過去三小時")
 
 async def apologize(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    chat_id = update.message.chat_id
+    print(f"Starting apology generation for chat {chat_id}")
+
+    waiting_message = await update.message.reply_text("度緊呢單野點拆… ⏳")
     apology = get_ai_apology()
-    await update.message.reply_text(apology)
+    print(f"Generated apology for chat {chat_id}: {apology}")
+
+    if apology and apology != '哎呀，道歉失敗，唔好打我🙏':
+        await waiting_message.edit_text(apology, parse_mode='MarkdownV2')
+    else:
+        await waiting_message.edit_text('哎呀，道歉失敗，唔好打我🙏')
 
 # Summarize text using DeepSeek API
 def get_ai_summary(text: str) -> str:
@@ -185,7 +193,7 @@ def get_ai_summary(text: str) -> str:
         )
         return response.choices[0].message.content
     except Exception as e:
-        logger.error(f"Error in get_ai_summary: {e}")
+        print(f"Error in get_ai_summary: {e}")
         return '系統想方加(出錯)，好對唔住'
 
 # Generate apology using DeepSeek API
@@ -196,7 +204,7 @@ def get_ai_apology() -> str:
             model="deepseek-chat",
             messages=[
                 {"role": "user",
-                 "content": "用繁體中文同香港式口語去道歉，要係搞笑但唔會得罪人嘅道歉，要有啲emoji，字數30以下"},
+                 "content": "用繁體中文同香港式口語去道歉，內容要每次都唔同，搞笑但唔會得罪人嘅道歉；要有啲emoji；字數30以下；唔洗講返啲要求出來；"},
             ],
             stream=False
         )
@@ -204,7 +212,7 @@ def get_ai_apology() -> str:
         apology += "\n\n免責聲明: 唔關五仁月餅事月餅🥮求下大家俾下面🙏"
         return apology
     except Exception as e:
-        logger.error(f"Error in get_ai_apology: {e}")
+        print(f"Error in get_ai_apology: {e}")
         return '哎呀，道歉失敗，唔好打我🙏'
 
 # Register handlers
@@ -219,5 +227,5 @@ application.add_handler(CommandHandler("apologize", apologize))
 
 # Start the bot
 if __name__ == "__main__":
-    logger.info("Starting bot...")
+    print("Starting bot...")
     application.run_polling()
