@@ -15,22 +15,29 @@ HK_TIMEZONE = timezone(timedelta(hours=8))
 # Store messages by chat ID
 messages = {}  # Dictionary to store messages per chat
 
-
 # Handle received messages
 async def log_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     print("log_message triggered!")
     if update.message and update.message.text:
         chat_id = update.message.chat_id
-        print(f"Message received in chat {chat_id}: {update.message.text}")
+        user = update.message.from_user  # Get the user who sent the message
         message = update.message.text
-        timestamp = update.message.date  # Telegram provides UTC time
+        timestamp = update.message.date
+
+        # Extract user info
+        user_name = user.username if user.username else user.first_name  # Use username if available, else first_name
+        print(f"Message received in chat {chat_id} from {user_name}: {message}")
 
         if chat_id not in messages:
             messages[chat_id] = []
 
-        messages[chat_id].append({"text": message, "time": timestamp})
+        # Store message with user info
+        messages[chat_id].append({
+            "text": message,
+            "time": timestamp,
+            "user_name": user_name
+        })
         print(f"Messages list for chat {chat_id}: {messages[chat_id]}")
-
 
 # Helper function to summarize messages in a given time range
 async def summarize_in_range(update: Update, start_time: datetime, end_time: datetime, period_name: str) -> None:
@@ -39,15 +46,18 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
         await update.message.reply_text(f"No messages to summarize for {period_name} in this chat!")
         return
 
-    # Convert message timestamps to HK time for comparison
-    day_messages = [msg["text"] for msg in messages[chat_id] if
-                    start_time <= msg["time"].astimezone(HK_TIMEZONE) < end_time]
+    # Prepend username to each message text
+    day_messages = [
+        f"{msg['user_name']}: {msg['text']}"
+        for msg in messages[chat_id]
+        if start_time <= msg["time"].astimezone(HK_TIMEZONE) < end_time
+    ]
     if not day_messages:
         await update.message.reply_text(f"No messages to summarize for {period_name} in this chat!")
         return
 
     waiting_message = await update.message.reply_text("等一等，我諗緊嘢… ⏳")
-    text_to_summarize = "\n".join(day_messages)
+    text_to_summarize = "\n".join(day_messages)  # Concatenate with newlines
     summary = get_ai_summary(text_to_summarize)
 
     formatted_start = start_time.strftime("%Y-%m-%d %H:%M")
@@ -57,13 +67,11 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
 
-
 # Command to summarize full day (00:00 yesterday - now)
 async def summarize_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    now = datetime.now(HK_TIMEZONE)  # Use HK timezone
+    now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
     await summarize_in_range(update, start_of_day, now, "全日")
-
 
 # Command to summarize morning (06:00 - 12:00 today)
 async def summarize_morning(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -75,7 +83,6 @@ async def summarize_morning(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         morning_end = now
     await summarize_in_range(update, morning_start, morning_end, "今日早晨 (06:00-12:00)")
 
-
 # Command to summarize afternoon (12:00 - 18:00 today)
 async def summarize_afternoon(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(HK_TIMEZONE)
@@ -85,7 +92,6 @@ async def summarize_afternoon(update: Update, context: ContextTypes.DEFAULT_TYPE
     if now < afternoon_end:
         afternoon_end = now
     await summarize_in_range(update, afternoon_start, afternoon_end, "今日下午 (12:00-18:00)")
-
 
 # Command to summarize night (18:00 today - 05:59 tomorrow or now)
 async def summarize_night(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -97,20 +103,17 @@ async def summarize_night(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         night_end = now
     await summarize_in_range(update, night_start, night_end, "今晚 (18:00-05:59)")
 
-
 # Command to summarize last hour
 async def summarize_last_hour(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(HK_TIMEZONE)
     last_hour_start = now - timedelta(hours=1)
     await summarize_in_range(update, last_hour_start, now, "過去一小時")
 
-
 # Command to summarize last 3 hours
 async def summarize_last_3_hours(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(HK_TIMEZONE)
     last_3_hours_start = now - timedelta(hours=3)
     await summarize_in_range(update, last_3_hours_start, now, "過去三小時")
-
 
 # Summarize text using DeepSeek API
 def get_ai_summary(text: str) -> str:
@@ -120,7 +123,7 @@ def get_ai_summary(text: str) -> str:
             model="deepseek-chat",
             messages=[
                 {"role": "user",
-                 "content": f'用繁體中文同香港式口語去總結以下對話；內容不要太複雜；精闢地描述每個重點；可以講得輕鬆有趣啲；轉述內容時要提及邊位講；除左總結對話之外，係尾段總結邊位最多野講，格式為（[名]: 說話頻率百分比）加啲emoji，同講得搞笑啲: {text}'},
+                 "content": f'用繁體中文同香港式口語去總結以下對話；內容不要太複雜；說話方式可以輕鬆啲，但說話不要得罪人；精闢地描述每個重點；可以講得輕鬆有趣啲；轉述內容時要提及邊位講；除左總結對話之外，係尾段總結邊位最多野講，格式為（[名]: 說話頻率百分比）加啲emoji: {text}'},
             ],
             stream=False
         )
@@ -133,7 +136,6 @@ def get_ai_summary(text: str) -> str:
     except Exception as e:
         print(f"Other Error: {e}")
         return '系統想方加(出錯)，好對唔住'
-
 
 # Register handlers
 application.add_handler(MessageHandler(filters.Text() & ~filters.Command(), log_message))
