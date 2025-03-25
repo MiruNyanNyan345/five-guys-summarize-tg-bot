@@ -25,7 +25,10 @@ async def log_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         timestamp = update.message.date
 
         # Extract user info
-        user_name = user.username if user.username else user.first_name  # Use username if available, else first_name
+        # Extract user’s full name (first_name + last_name if available)
+        user_name = user.first_name if user.first_name else '唔知邊條粉蛋'
+        if user.last_name:
+            user_name += " " + user.last_name  # Combine first and last name
         print(f"Message received in chat {chat_id} from {user_name}: {message}")
 
         if chat_id not in messages:
