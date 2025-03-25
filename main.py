@@ -1,10 +1,15 @@
 from datetime import datetime, timedelta, timezone
 import sqlite3
 import os
+import logging
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, CommandHandler, ContextTypes
 from decouple import config
 from openai import OpenAI
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Set Telegram Bot Token
 TOKEN = config('BOT_TOKEN')
@@ -14,26 +19,46 @@ application = Application.builder().token(TOKEN).build()
 HK_TIMEZONE = timezone(timedelta(hours=8))
 
 # SQLite database path (configurable for Railway volumes)
-DB_PATH = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "/data") + "/messages.db"
+DB_DIR = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "/data")  # Directory only
+DB_PATH = os.path.join(DB_DIR, "messages.db")  # Full path with filename
+
+# Ensure the directory exists
+def ensure_db_directory():
+    try:
+        os.makedirs(DB_DIR, exist_ok=True)
+        logger.info(f"Database directory ensured at {DB_DIR}")
+    except Exception as e:
+        logger.error(f"Failed to create database directory {DB_DIR}: {e}")
+        raise
 
 # Initialize SQLite database
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chat_id INTEGER,
-            user_name TEXT,
-            text TEXT,
-            timestamp TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
+    ensure_db_directory()  # Ensure directory exists before creating DB
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id INTEGER,
+                user_name TEXT,
+                text TEXT,
+                timestamp TEXT
+            )
+        """)
+        conn.commit()
+        conn.close()
+        logger.info(f"Database initialized at {DB_PATH}")
+    except sqlite3.OperationalError as e:
+        logger.error(f"Failed to initialize database at {DB_PATH}: {e}")
+        raise
 
 # Run database initialization at startup
-init_db()
+try:
+    init_db()
+except Exception as e:
+    logger.error(f"Startup failed: {e}")
+    exit(1)
 
 # Handle received messages
 async def log_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -41,47 +66,51 @@ async def log_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         chat_id = update.message.chat_id
         user = update.message.from_user
         message = update.message.text
-        timestamp = update.message.date.isoformat()  # Store as ISO string
+        timestamp = update.message.date.isoformat()
 
-        # Extract user info
         user_name = user.first_name if user.first_name else '唔知邊條粉蛋'
         if user.last_name:
             user_name += " " + user.last_name
 
-        # Insert message into SQLite
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO messages (chat_id, user_name, text, timestamp) VALUES (?, ?, ?, ?)",
-            (chat_id, user_name, message, timestamp)
-        )
-        conn.commit()
-        conn.close()
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO messages (chat_id, user_name, text, timestamp) VALUES (?, ?, ?, ?)",
+                (chat_id, user_name, message, timestamp)
+            )
+            conn.commit()
+            conn.close()
+        except sqlite3.OperationalError as e:
+            logger.error(f"Failed to log message to database: {e}")
+            await update.message.reply_text("哎呀，儲存訊息時出錯！請稍後再試。")
 
 # Helper function to summarize messages in a given time range
 async def summarize_in_range(update: Update, start_time: datetime, end_time: datetime, period_name: str) -> None:
     chat_id = update.message.chat_id
 
-    # Query messages from SQLite
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT user_name, text, timestamp FROM messages
-        WHERE chat_id = ? AND timestamp >= ? AND timestamp < ?
-        ORDER BY timestamp ASC
-    """, (chat_id, start_time.isoformat(), end_time.isoformat()))
-    rows = cursor.fetchall()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT user_name, text, timestamp FROM messages
+            WHERE chat_id = ? AND timestamp >= ? AND timestamp < ?
+            ORDER BY timestamp ASC
+        """, (chat_id, start_time.isoformat(), end_time.isoformat()))
+        rows = cursor.fetchall()
+        conn.close()
+    except sqlite3.OperationalError as e:
+        logger.error(f"Failed to query database: {e}")
+        await update.message.reply_text("哎呀，讀取訊息時出錯！請稍後再試。")
+        return
 
     if not rows:
         await update.message.reply_text(f"No messages to summarize for {period_name} in this chat!")
         return
 
-    # Format messages with username
     day_messages = [f"{row[0]}: {row[1]}" for row in rows]
     text_to_summarize = "\n".join(day_messages)
 
-    # Get AI summary
     waiting_message = await update.message.reply_text("等一等，我諗緊嘢… ⏳")
     summary = get_ai_summary(text_to_summarize)
 
@@ -92,13 +121,12 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
 
-# Command to summarize full day (00:00 yesterday - now)
+# Command handlers (unchanged from previous version)
 async def summarize_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
     await summarize_in_range(update, start_of_day, now, "全日")
 
-# Command to summarize morning (06:00 - 12:00 today)
 async def summarize_morning(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -108,7 +136,6 @@ async def summarize_morning(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         morning_end = now
     await summarize_in_range(update, morning_start, morning_end, "今日早晨 (06:00-12:00)")
 
-# Command to summarize afternoon (12:00 - 18:00 today)
 async def summarize_afternoon(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -118,23 +145,20 @@ async def summarize_afternoon(update: Update, context: ContextTypes.DEFAULT_TYPE
         afternoon_end = now
     await summarize_in_range(update, afternoon_start, afternoon_end, "今日下午 (12:00-18:00)")
 
-# Command to summarize night (18:00 today - 05:59 tomorrow or now)
 async def summarize_night(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     night_start = start_of_day.replace(hour=18, minute=0)
-    night_end = start_of_day + timedelta(days=1)  # Tomorrow’s 00:00
+    night_end = start_of_day + timedelta(days=1)
     if now < night_end:
         night_end = now
     await summarize_in_range(update, night_start, night_end, "今晚 (18:00-05:59)")
 
-# Command to summarize last hour
 async def summarize_last_hour(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(HK_TIMEZONE)
     last_hour_start = now - timedelta(hours=1)
     await summarize_in_range(update, last_hour_start, now, "過去一小時")
 
-# Command to summarize last 3 hours
 async def summarize_last_3_hours(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(HK_TIMEZONE)
     last_3_hours_start = now - timedelta(hours=3)
@@ -154,7 +178,7 @@ def get_ai_summary(text: str) -> str:
         )
         return response.choices[0].message.content
     except Exception as e:
-        print(f"Error in get_ai_summary: {e}")
+        logger.error(f"Error in get_ai_summary: {e}")
         return '系統想方加(出錯)，好對唔住'
 
 # Register handlers
@@ -168,4 +192,5 @@ application.add_handler(CommandHandler("summarize_last_3_hours", summarize_last_
 
 # Start the bot
 if __name__ == "__main__":
+    logger.info("Starting bot...")
     application.run_polling()
