@@ -209,7 +209,7 @@ def get_ai_apology() -> str:
             stream=False
         )
         apology = response.choices[0].message.content
-        apology += "\n\n免責聲明: 唔關五仁月餅事月餅🥮求下大家俾下面🙏"
+        apology += "\n\n免責聲明: 唔關五仁月餅事🥮求下大家俾下面🙏"
         return apology
     except Exception as e:
         print(f"Error in get_ai_apology: {e}")
