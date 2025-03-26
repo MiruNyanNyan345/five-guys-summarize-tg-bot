@@ -203,7 +203,8 @@ def get_ai_summary(text: str) -> str:
     client = OpenAI(api_key=config("XAI_API_KEY"), base_url="https://api.x.ai/v1")
     try:
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            # model="deepseek-chat",
+            model="grok-2-latest",
             messages=[
                 {"role": "user",
                  "content": f'用繁體中文同香港式口語去總結以下對話；加個搞笑嘅title俾個summary，最好有啲連登feel；內容不要太複雜；說話方式可以輕鬆啲，但說話不要得罪人；精闢地描述每個重點；可以講得輕鬆有趣啲；轉述內容時要提及邊位講；除左總結對話之外，係尾段總結邊位最多野講，格式為（[名]: 說話頻率百分比）加啲emoji: {text}'},
@@ -221,7 +222,8 @@ def get_ai_apology() -> str:
     client = OpenAI(api_key=config("XAI_API_KEY"), base_url="https://api.x.ai/v1")
     try:
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            # model="deepseek-chat",
+            model="grok-2-latest",
             messages=[
                 {"role": "user",
                  "content": "用繁體中文同香港式口語去道歉，請人食五仁月餅，搞笑但唔會得罪人嘅道歉，要有啲emoji，字數30以下，不用加上註解"},
