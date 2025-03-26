@@ -199,7 +199,8 @@ async def apologize(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 # Summarize text using DeepSeek API
 def get_ai_summary(text: str) -> str:
-    client = OpenAI(api_key=config("API_KEY"), base_url="https://api.deepseek.com")
+    # client = OpenAI(api_key=config("API_KEY"), base_url="https://api.deepseek.com")
+    client = OpenAI(api_key=config("XAI_API_KEY"), base_url="https://api.x.ai/v1")
     try:
         response = client.chat.completions.create(
             model="deepseek-chat",
