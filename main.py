@@ -18,43 +18,47 @@ application = Application.builder().token(TOKEN).build()
 # Define Hong Kong timezone (UTC+8)
 HK_TIMEZONE = timezone(timedelta(hours=8))
 
-# SQLite database path (configurable for Railway volumes)
-DB_DIR = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "/data")  # Directory only
-DB_PATH = os.path.join(DB_DIR, "messages.db")  # Full path with filename
+# PostgreSQL connection pool
+DB_URL = os.getenv("DATABASE_URL", config("DATABASE_URL"))
+db_pool = None
 
-# Ensure the directory exists
-def ensure_db_directory():
+def init_db_pool():
+    global db_pool
     try:
-        os.makedirs(DB_DIR, exist_ok=True)
-        print(f"Database directory ensured at {DB_DIR}")
+        db_pool = psycopg2.pool.SimpleConnectionPool(
+            1, 20, dsn=DB_URL
+        )
+        print("Database pool initialized")
     except Exception as e:
-        print(f"Failed to create database directory {DB_DIR}: {e}")
+        print(f"Failed to initialize database pool: {e}")
         raise
 
-# Initialize SQLite database
+# Initialize database schema
 def init_db():
-    ensure_db_directory()  # Ensure directory exists before creating DB
+    conn = None
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = db_pool.getconn()
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                chat_id INTEGER,
+                id SERIAL PRIMARY KEY,
+                chat_id BIGINT,
                 user_name TEXT,
                 text TEXT,
-                timestamp TEXT
+                timestamp TIMESTAMP
             )
         """)
         conn.commit()
-        conn.close()
-        print(f"Database initialized at {DB_PATH}")
-    except sqlite3.OperationalError as e:
-        print(f"Failed to initialize database at {DB_PATH}: {e}")
+        print("Database schema initialized")
+    except Exception as e:
+        print(f"Failed to initialize database: {e}")
         raise
+    finally:
+        if conn:
+            db_pool.putconn(conn)
 
-# Run database initialization at startup
 try:
+    init_db_pool()
     init_db()
 except Exception as e:
     print(f"Startup failed: {e}")
@@ -66,59 +70,72 @@ async def log_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         chat_id = update.message.chat_id
         user = update.message.from_user
         message = update.message.text
-        timestamp = update.message.date.isoformat()
+        timestamp = update.message.date
 
         user_name = user.first_name if user.first_name else '唔知邊條粉蛋'
         if user.last_name:
             user_name += " " + user.last_name
 
+        logger.info(f"Received message in chat {chat_id} from {user_name}: {message}")
+
+        conn = None
         try:
-            conn = sqlite3.connect(DB_PATH)
+            conn = db_pool.getconn()
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO messages (chat_id, user_name, text, timestamp) VALUES (?, ?, ?, ?)",
+                "INSERT INTO messages (chat_id, user_name, text, timestamp) VALUES (%s, %s, %s, %s)",
                 (chat_id, user_name, message, timestamp)
             )
             conn.commit()
-            conn.close()
-        except sqlite3.OperationalError as e:
-            print(f"Failed to log message to database: {e}")
+            logger.info(f"Message saved to database for chat {chat_id}")
+        except Exception as e:
+            logger.error(f"Failed to log message to database: {e}")
             await update.message.reply_text("哎呀，儲存訊息時出錯！請稍後再試。")
+        finally:
+            if conn:
+                db_pool.putconn(conn)
 
 # Helper function to summarize messages in a given time range
 async def summarize_in_range(update: Update, start_time: datetime, end_time: datetime, period_name: str) -> None:
     chat_id = update.message.chat_id
+    logger.info(f"Starting summarization for {period_name} in chat {chat_id}")
 
+    conn = None
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = db_pool.getconn()
         cursor = conn.cursor()
         cursor.execute("""
             SELECT user_name, text, timestamp FROM messages
-            WHERE chat_id = ? AND timestamp >= ? AND timestamp < ?
+            WHERE chat_id = %s AND timestamp >= %s AND timestamp < %s
             ORDER BY timestamp ASC
-        """, (chat_id, start_time.isoformat(), end_time.isoformat()))
+        """, (chat_id, start_time, end_time))
         rows = cursor.fetchall()
-        conn.close()
-    except sqlite3.OperationalError as e:
-        print(f"Failed to query database: {e}")
+    except Exception as e:
+        logger.error(f"Failed to query database: {e}")
         await update.message.reply_text("哎呀，讀取訊息時出錯！請稍後再試。")
         return
+    finally:
+        if conn:
+            db_pool.putconn(conn)
 
     if not rows:
         await update.message.reply_text(f"No messages to summarize for {period_name} in this chat!")
+        logger.info(f"No messages found for {period_name} in chat {chat_id}")
         return
 
     day_messages = [f"{row[0]}: {row[1]}" for row in rows]
     text_to_summarize = "\n".join(day_messages)
 
-    waiting_message = await update.message.reply_text("等一等，幫緊你...幫緊你... ⏳")
+    waiting_message = await update.message.reply_text("幫緊你幫緊你… ⏳")
     summary = get_ai_summary(text_to_summarize)
+    logger.info(f"Generated summary for {period_name} in chat {chat_id}: {summary}")
 
     formatted_start = start_time.astimezone(HK_TIMEZONE).strftime("%Y-%m-%d %H:%M")
     formatted_end = end_time.astimezone(HK_TIMEZONE).strftime("%Y-%m-%d %H:%M")
     if summary and summary != '系統想方加(出錯)，好對唔住':
         await waiting_message.edit_text(
-            f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}"
+            f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}",
+            parse_mode='MarkdownV2'
         )
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
