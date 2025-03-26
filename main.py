@@ -212,7 +212,7 @@ def get_ai_summary(text: str) -> str:
             model="grok-2-latest",
             messages=[
                 {"role": "user",
-                 "content": f'用繁體中文同香港式口語去總結以下對話；說話要好撚有趣，好撚幽默，但說話不要得罪人，不能人身攻擊；加個搞笑嘅title俾個summary，最好有啲連登feel；轉述內容時要提及邊位講；除左總結對話之外，係尾段總結邊位最多野講，格式為（[名]: 說話頻率百分比）加啲emoji: {text}'},
+                 "content": f'用繁體中文同港式口語去總結以下對話；說話要有趣幽默，但不要得罪人；每個對話嘅重點分為一個section；加個搞笑和連登feel的title俾個summary；轉述內容時要提及邊位講；除左總結對話之外，係尾段總結邊位最多野講，格式為（[名]: 說話頻率百分比）加啲emoji: {text}'},
             ],
             stream=False
         )
