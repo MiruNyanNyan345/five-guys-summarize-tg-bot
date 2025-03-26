@@ -217,7 +217,8 @@ def get_ai_summary(text: str) -> str:
 
 # Generate apology using DeepSeek API
 def get_ai_apology() -> str:
-    client = OpenAI(api_key=config("API_KEY"), base_url="https://api.deepseek.com")
+    # client = OpenAI(api_key=config("API_KEY"), base_url="https://api.deepseek.com")
+    client = OpenAI(api_key=config("XAI_API_KEY"), base_url="https://api.x.ai/v1")
     try:
         response = client.chat.completions.create(
             model="deepseek-chat",
