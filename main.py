@@ -35,8 +35,7 @@ SUMMARIZE_PROMPTS = [
     "加個搞笑和連登仔tone的title俾個summary",
     "轉述內容時要提及邊位user講，user名不得自行更改",
     "除左總結對話之外，係尾段總結邊位最多野講，格式為（[名]: 說話頻率百分比）",
-    "內容文字格式需要符合telegram，例如粗體",
-    "適當時候用上(公道講句xxxx)"
+    "內容文字格式需要符合telegram，例如粗體"
 ]
 
 # PostgreSQL connection pool
@@ -155,7 +154,8 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
     formatted_end = end_time.astimezone(HK_TIMEZONE).strftime("%Y-%m-%d %H:%M")
     if summary and summary != '系統想方加(出錯)，好對唔住':
         await waiting_message.edit_text(
-            f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}"
+            f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}",
+            parse_mode='Markdown'
         )
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
