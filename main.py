@@ -136,8 +136,7 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
     formatted_end = end_time.astimezone(HK_TIMEZONE).strftime("%Y-%m-%d %H:%M")
     if summary and summary != '系統想方加(出錯)，好對唔住':
         await waiting_message.edit_text(
-            f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}",
-            parse_mode='MarkdownV2'
+            f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}"
         )
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
