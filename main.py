@@ -27,11 +27,12 @@ BASE_URL = "https://api.x.ai/v1"
 
 # prompts for ai summmarize
 SUMMARIZE_PROMPTS = [
-    "用繁體中文同港式口語去總結以下對話",
+    "綜合以下條件總結對話",
+    "用繁體中文同港式口語",
     "對話加啲emoji",
-    "說話方式要模仿連登仔以及有趣幽默",
+    "說話方式要模仿連登仔，輕鬆有趣幽默",
     "每個對話嘅重點分為一個chapter，每個chapter都有一個搞笑和連登feel的的subtitle",
-    "每個chapter內容要精闢地sunmarize相關對話內容，不能過長",
+    "每個chapter內容要精闢地總結相關對話內容，限制60字以內",
     "加個搞笑和連登仔tone的title俾個summary",
     "轉述內容時要提及邊位user講，user名不得自行更改，user名前後要加空格及粗體",
     "除左總結對話之外，係尾段總結邊位最多野講，格式為（[名]: 說話頻率百分比）",
@@ -226,7 +227,7 @@ def get_ai_summary(text: str) -> str:
             model="grok-2-latest",
             messages=[
                 {"role": "user",
-                 "content": f'{";".join(SUMMARIZE_PROMPTS)}: {text}'},
+                 "content": f'{";".join(SUMMARIZE_PROMPTS)};以下為需要總結的對話:{text}'},
             ],
             stream=False
         )
