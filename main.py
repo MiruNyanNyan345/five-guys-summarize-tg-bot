@@ -6,6 +6,8 @@ from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, CommandHandler, ContextTypes
 from decouple import config
 from openai import OpenAI
+import psycopg2
+from psycopg2 import pool
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
