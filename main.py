@@ -20,6 +20,11 @@ application = Application.builder().token(TOKEN).build()
 # Define Hong Kong timezone (UTC+8)
 HK_TIMEZONE = timezone(timedelta(hours=8))
 
+# API KEY
+API_KEY = config("XAI_API_KEY")
+# BASE_URL
+BASE_URL = "https://api.x.ai/v1"
+
 # PostgreSQL connection pool
 DB_URL = os.getenv("DATABASE_URL", config("DATABASE_URL"))
 db_pool = None
@@ -200,14 +205,14 @@ async def apologize(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 # Summarize text using DeepSeek API
 def get_ai_summary(text: str) -> str:
     # client = OpenAI(api_key=config("API_KEY"), base_url="https://api.deepseek.com")
-    client = OpenAI(api_key=config("XAI_API_KEY"), base_url="https://api.x.ai/v1")
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     try:
         response = client.chat.completions.create(
             # model="deepseek-chat",
             model="grok-2-latest",
             messages=[
                 {"role": "user",
-                 "content": f'用繁體中文同香港式口語去總結以下對話；加個搞笑嘅title俾個summary，最好有啲連登feel；內容不要太複雜；說話方式可以輕鬆啲，但說話不要得罪人；精闢地描述每個重點；可以講得輕鬆有趣啲；轉述內容時要提及邊位講；除左總結對話之外，係尾段總結邊位最多野講，格式為（[名]: 說話頻率百分比）加啲emoji: {text}'},
+                 "content": f'用繁體中文同香港式口語去總結以下對話；說話要好撚有趣，好撚幽默，但說話不要得罪人，不能人身攻擊；加個搞笑嘅title俾個summary，最好有啲連登feel；轉述內容時要提及邊位講；除左總結對話之外，係尾段總結邊位最多野講，格式為（[名]: 說話頻率百分比）加啲emoji: {text}'},
             ],
             stream=False
         )
@@ -219,7 +224,7 @@ def get_ai_summary(text: str) -> str:
 # Generate apology using DeepSeek API
 def get_ai_apology() -> str:
     # client = OpenAI(api_key=config("API_KEY"), base_url="https://api.deepseek.com")
-    client = OpenAI(api_key=config("XAI_API_KEY"), base_url="https://api.x.ai/v1")
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     try:
         response = client.chat.completions.create(
             # model="deepseek-chat",
