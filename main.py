@@ -31,7 +31,7 @@ SUMMARIZE_PROMPTS = [
     "用繁體中文同港式口語",
     "對話加啲emoji",
     "說話方式要模仿連登仔，輕鬆有趣幽默",
-    "每個對話嘅重點分為一個chapter，每個chapter都有一個搞笑和連登feel的的subtitle",
+    "將頭三對討論度高嘅對話分為三個chapter，每個chapter都有一個搞笑和連登feel的的subtitle",
     "每個chapter內容要精闢地總結相關對話內容，限制60字以內",
     "加個搞笑和連登仔tone的title俾個summary",
     "轉述內容時要提及邊位user講，user名不得自行更改，user名前後要加空格及粗體",
