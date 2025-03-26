@@ -16,15 +16,17 @@ logger = logging.getLogger(__name__)
 # Set Telegram Bot Token
 TOKEN = config('BOT_TOKEN')
 application = Application.builder().token(TOKEN).build()
-
+# MODEL = "grok-2-latest"
+MODEL = "deepseek-chat"
 # Define Hong Kong timezone (UTC+8)
 HK_TIMEZONE = timezone(timedelta(hours=8))
 
 # API KEY
-API_KEY = config("XAI_API_KEY")
+#API_KEY = config("XAI_API_KEY")
+API_KEY = config("API_KEY")
 # BASE_URL
-BASE_URL = "https://api.x.ai/v1"
-
+#BASE_URL = "https://api.x.ai/v1"
+BASE_URL = "https://api.deepseek.com"
 # prompts for ai summmarize
 SUMMARIZE_PROMPTS = [
     "綜合以下條件總結對話",
@@ -224,7 +226,7 @@ def get_ai_summary(text: str) -> str:
     try:
         response = client.chat.completions.create(
             # model="deepseek-chat",
-            model="grok-2-latest",
+            model=MODEL,
             messages=[
                 {"role": "user",
                  "content": f'{";".join(SUMMARIZE_PROMPTS)};以下為需要總結的對話:{text}'},
@@ -243,7 +245,7 @@ def get_ai_apology() -> str:
     try:
         response = client.chat.completions.create(
             # model="deepseek-chat",
-            model="grok-2-latest",
+            model=MODEL,
             messages=[
                 {"role": "user",
                  "content": "用繁體中文同香港式口語去道歉，請人食五仁月餅，搞笑但唔會得罪人嘅道歉，要有啲emoji，字數30以下，不用加上註解"},
