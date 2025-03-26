@@ -25,6 +25,20 @@ API_KEY = config("XAI_API_KEY")
 # BASE_URL
 BASE_URL = "https://api.x.ai/v1"
 
+# prompts for ai summmarize
+SUMMARIZE_PROMPTS = [
+    "用繁體中文同港式口語去總結以下對話",
+    "對話加啲emoji",
+    "說話方式要模仿連登仔",
+    "說話要有趣幽默，但不要得罪人",
+    "每個對話嘅重點分為一個chapter，每個chapter都有一個搞笑和連登feel的的subtitle",
+    "加個搞笑和連登仔tone的title俾個summary",
+    "轉述內容時要提及邊位user講，user名不得自行更改",
+    "除左總結對話之外，係尾段總結邊位最多野講，格式為（[名]: 說話頻率百分比）",
+    "內容文字格式需要符合telegram，例如粗體",
+    "適當時候用上(公道講句xxxx)"
+]
+
 # PostgreSQL connection pool
 DB_URL = os.getenv("DATABASE_URL", config("DATABASE_URL"))
 db_pool = None
@@ -212,7 +226,7 @@ def get_ai_summary(text: str) -> str:
             model="grok-2-latest",
             messages=[
                 {"role": "user",
-                 "content": f'用繁體中文同港式口語去總結以下對話；說話要有趣幽默，但不要得罪人；每個對話嘅重點分為一個chapter，每個chapter都有一個搞笑和連登feel的的subtitle；加個搞笑和連登feel的title俾個summary；轉述內容時要提及邊位user講，user名不得自行更改；除左總結對話之外，係尾段總結邊位最多野講，格式為（[名]: 說話頻率百分比）加啲emoji: {text}'},
+                 "content": f'{";".join(SUMMARIZE_PROMPTS)}: {text}'},
             ],
             stream=False
         )
