@@ -6,6 +6,65 @@ from database import db_pool
 from ai import get_ai_summary
 
 
+async def summarize_by_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    chat_id = update.message.chat_id
+    message_text = update.message.text
+    logger.info(f"Starting user summarization in chat {chat_id} with command: {message_text}")
+
+    # Check if there's a username tagged after the command
+    args = message_text.split()
+    if len(args) < 2 or not args[1].startswith('@'):
+        await update.message.reply_text("請用格式 /summarize_user @username，例如 /summarize_user @john_doe")
+        return
+
+    # Extract the username (remove the @ symbol)
+    target_username = args[1][1:]  # e.g., "someone" from "@someone"
+
+    # Define the time range: from 00:00 today to now
+    now = datetime.now(HK_TIMEZONE)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    conn = None
+    try:
+        conn = db_pool.getconn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT user_name, text, timestamp FROM messages
+            WHERE chat_id = %s AND user_name = %s AND timestamp >= %s AND timestamp < %s
+            ORDER BY timestamp ASC
+        """, (chat_id, target_username, start_of_day, now))
+        rows = cursor.fetchall()
+    except Exception as e:
+        logger.error(f"Failed to query database: {e}")
+        await update.message.reply_text("哎呀，讀取訊息時出錯！請稍後再試。")
+        return
+    finally:
+        if conn:
+            db_pool.putconn(conn)
+
+    if not rows:
+        await update.message.reply_text(f"今日由00:00開始， **{target_username}** 靜過太空！")
+        logger.info(f"No messages found for user {target_username} in chat {chat_id}")
+        return
+
+    user_messages = [f"{row[0]}: {row[1]}" for row in rows]
+    text_to_summarize = "\n".join(user_messages)
+
+    waiting_message = await update.message.reply_text(f"睇來 **{target_username}** 今日講咗好多嘢，幫緊你…幫緊你… ⏳")
+    summary = get_ai_summary(text_to_summarize)
+    logger.info(f"Generated summary for user {target_username} in chat {chat_id}: {summary}")
+
+    formatted_start = start_of_day.strftime("%Y-%m-%d %H:%M")
+    formatted_end = now.strftime("%Y-%m-%d %H:%M")
+    if summary and summary != '系統想方加(出錯)，好對唔住':
+        await waiting_message.edit_text(
+            f"由 {formatted_start} 到 {formatted_end}， ** {target_username} ** 講咗嘅總結: 📝\n{summary}",
+            parse_mode='Markdown'
+        )
+    else:
+        await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
+
+
 async def summarize_in_range(update: Update, start_time: datetime, end_time: datetime, period_name: str) -> None:
     chat_id = update.message.chat_id
     logger.info(f"Starting summarization for {period_name} in chat {chat_id}")
