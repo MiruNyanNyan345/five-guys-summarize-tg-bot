@@ -1,4 +1,6 @@
 from telegram.ext import Application, MessageHandler, filters, CommandHandler
+
+from compliment import compliment_user
 from config import TOKEN, logger
 from database import DatabasePool, init_db, log_message  # Import DatabasePool instead of init_db_pool
 from summarize import (summarize_day, summarize_morning, summarize_afternoon,
@@ -41,7 +43,8 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("summarize_last_hour", summarize_last_hour))
     application.add_handler(CommandHandler("summarize_last_3_hours", summarize_last_3_hours))
     application.add_handler(CommandHandler("summarize_user", summarize_user))
-    application.add_handler(CommandHandler("golden_quote_king", summarize_golden_quote_king))  # 新增 handler
+    application.add_handler(CommandHandler("golden_quote_king", summarize_golden_quote_king))
+    application.add_handler(CommandHandler("compliment", compliment_user))
     application.add_handler(CommandHandler("apologize", apologize))
 
     print("Starting bot...")
