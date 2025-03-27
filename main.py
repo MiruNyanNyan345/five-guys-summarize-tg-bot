@@ -12,7 +12,8 @@ if __name__ == "__main__":
         init_db_pool()
         init_db()
     except Exception as e:
-        print(f"Startup failed: {e}")
+        logger.error(f"Startup failed: {e}")
+        print(f"Bot cannot start due to: {e}")
         exit(1)
 
     # Register handlers

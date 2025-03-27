@@ -33,6 +33,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS messages (
                 id SERIAL PRIMARY KEY,
                 chat_id BIGINT,
+                user_id TEXT,
                 user_name TEXT,
                 text TEXT,
                 timestamp TIMESTAMP
@@ -58,7 +59,9 @@ async def log_message(update, context):
         user_name = user.first_name if user.first_name else '唔知邊條粉蛋'
         if user.last_name:
             user_name += " " + user.last_name
+
         user_id = user.id
+
         logger.info(f"Received message in chat {chat_id} from {user_name}: {message}")
 
         if db_pool is None:
