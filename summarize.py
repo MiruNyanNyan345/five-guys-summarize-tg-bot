@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import ContextTypes
-from config import HK_TIMEZONE, logger, GOLDEN_PROMPTS, SUMMARIZE_PROMPTS
+from config import HK_TIMEZONE, logger, GOLDEN_PROMPTS, SUMMARIZE_PROMPTS, SUMMARIZE_USER_PROMPTS
 from database import DatabasePool  # Import the class instead of db_pool
 from ai import get_ai_summary
 
@@ -175,7 +175,7 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     text_to_summarize = "\n".join(user_messages)
 
     waiting_message = await message.reply_text(f"幫緊你總結 ** {target_username} ** 今日講咗啲咩… ⏳")
-    summary = get_ai_summary(f'{";".join(SUMMARIZE_PROMPTS)};以下為需要總結的對話:{text_to_summarize}')
+    summary = get_ai_summary(f'{";".join(SUMMARIZE_USER_PROMPTS)};以下為需要總結的對話:{text_to_summarize}')
     logger.info(f"Generated summary for user {target_username} in chat {chat_id}: {summary}")
 
     formatted_start = start_of_day.strftime("%Y-%m-%d %H:%M")
