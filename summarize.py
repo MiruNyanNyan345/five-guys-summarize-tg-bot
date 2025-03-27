@@ -1,9 +1,74 @@
 from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import ContextTypes
-from config import HK_TIMEZONE, logger
+from config import HK_TIMEZONE, logger, GOLDEN_PROMPTS
 from database import DatabasePool  # Import the class instead of db_pool
 from ai import get_ai_summary
+
+
+async def summarize_golden_quote_king(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    chat_id = update.message.chat_id
+    logger.info(f"Starting golden quote king selection in chat {chat_id}")
+
+    now = datetime.now(HK_TIMEZONE)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    try:
+        db_pool = DatabasePool.get_pool()
+    except RuntimeError as e:
+        logger.error(f"Database error: {e}")
+        await update.message.reply_text("哎呀，資料庫未準備好，請稍後再試！")
+        return
+
+    conn = None
+    try:
+        conn = db_pool.getconn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT user_name, text, timestamp FROM messages
+            WHERE chat_id = %s AND timestamp >= %s AND timestamp < %s
+            ORDER BY timestamp ASC
+        """, (chat_id, start_of_day, now))
+        rows = cursor.fetchall()
+    except Exception as e:
+        logger.error(f"Failed to query database: {e}")
+        await update.message.reply_text("哎呀，讀取訊息時出錯！請稍後再試。")
+        return
+    finally:
+        if conn:
+            db_pool.putconn(conn)
+
+    if not rows:
+        await update.message.reply_text("今日靜L過太空呀，點揀金句王呀！")
+        logger.info(f"No messages found for golden quote king in chat {chat_id}")
+        return
+
+    # 將訊息按用戶分組
+    user_messages = {}
+    for row in rows:
+        user = row[0]
+        if user not in user_messages:
+            user_messages[user] = []
+        user_messages[user].append(row[1])
+
+    # 準備 AI 分析嘅文本
+    analysis_text = "\n\n".join([f"{user}:\n" + "\n".join(msgs) for user, msgs in user_messages.items()])
+
+    golden_prompt = f"{";".join(GOLDEN_PROMPTS)}\n\n以下係今日嘅對話:\n{analysis_text}"
+
+    waiting_message = await update.message.reply_text("搵緊今日嘅金句王… ⏳")
+    summary = get_ai_summary(golden_prompt)  # 用現有 get_ai_summary，但改用新 prompt
+    logger.info(f"Generated golden quote king summary in chat {chat_id}: {summary}")
+
+    formatted_start = start_of_day.strftime("%Y-%m-%d %H:%M")
+    formatted_end = now.strftime("%Y-%m-%d %H:%M")
+    if summary and summary != '系統想方加(出錯)，好對唔住':
+        await waiting_message.edit_text(
+            f"由 {formatted_start} 到 {formatted_end} 嘅金句王總結: 🏆\n{summary}",
+            parse_mode='Markdown'
+        )
+    else:
+        await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
 
 
 async def summarize_in_range(update: Update, start_time: datetime, end_time: datetime, period_name: str) -> None:

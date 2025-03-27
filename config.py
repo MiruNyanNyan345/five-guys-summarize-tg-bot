@@ -19,6 +19,13 @@ BASE_URL = "https://api.deepseek.com"
 # Hong Kong timezone (UTC+8)
 HK_TIMEZONE = timezone(timedelta(hours=8))
 
+# Golden prompts
+GOLDEN_PROMPTS = [
+    "用繁體中文同港式口語，分析以下對話，揀出今日嘅『金句王』",
+    "即係講咗最多有趣、幽默或令人印象深刻嘅話嘅用戶。列出你揀嘅理由（50字內）",
+    "加啲emoji，保持連登仔tone，唔好改用戶名，格式要用 Telegram Markdown",
+]
+
 # Summarize prompts
 SUMMARIZE_PROMPTS = [
     "綜合以下條件總結對話",
