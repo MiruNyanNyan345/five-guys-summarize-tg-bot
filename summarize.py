@@ -60,15 +60,19 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
 
 async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.message.chat_id
-    message_text = update.message.text
-    logger.info(f"Starting user summarization in chat {chat_id} with command: {message_text}")
+    message = update.message
+    logger.info(f"Starting user summarization in chat {chat_id} with command: {message.text}")
 
-    args = message_text.split()
-    if len(args) < 2 or not args[1].startswith('@'):
-        await update.message.reply_text("請用格式 /summarize_user @username，例如 /summarize_user @john_doe")
+    # Check if the message is a reply to another message
+    if not message.reply_to_message:
+        await message.reply_text("請回覆某個用戶嘅訊息，再用 /summarize_user 來總結佢今日講咗啲咩！")
         return
 
-    target_username = args[1][1:]
+    # Get the user from the replied-to message
+    target_user = message.reply_to_message.from_user
+    target_username = target_user.first_name if target_user.first_name else '唔知邊條粉蛋'
+    if target_user.last_name:
+        target_username += " " + target_user.last_name
 
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -77,7 +81,7 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         db_pool = DatabasePool.get_pool()
     except RuntimeError as e:
         logger.error(f"Database error: {e}")
-        await update.message.reply_text("哎呀，資料庫未準備好，請稍後再試！")
+        await message.reply_text("哎呀，資料庫未準備好，請稍後再試！")
         return
 
     conn = None
@@ -92,20 +96,20 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         rows = cursor.fetchall()
     except Exception as e:
         logger.error(f"Failed to query database: {e}")
-        await update.message.reply_text("哎呀，讀取訊息時出錯！請稍後再試。")
+        await message.reply_text("哎呀，讀取訊息時出錯！請稍後再試。")
         return
     finally:
         if conn:
             db_pool.putconn(conn)
 
     if not rows:
-        await update.message.reply_text(f"今日由00:00開始， ** {target_username} ** 無講過任何野喎！")
+        await message.reply_text(f"今日由00:00開始， ** {target_username} ** 無講過任何野喎！")
         return
 
     user_messages = [f"{row[0]}: {row[1]}" for row in rows]
     text_to_summarize = "\n".join(user_messages)
 
-    waiting_message = await update.message.reply_text(f"幫緊你總結 ** {target_username} ** 今日講咗啲咩… ⏳")
+    waiting_message = await message.reply_text(f"幫緊你總結 ** {target_username} ** 今日講咗啲咩… ⏳")
     summary = get_ai_summary(text_to_summarize)
     logger.info(f"Generated summary for user {target_username} in chat {chat_id}: {summary}")
 
