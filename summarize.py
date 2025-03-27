@@ -1,19 +1,19 @@
 from datetime import datetime, timedelta
-
 from telegram import Update
 from telegram.ext import ContextTypes
-
-from ai import get_ai_summary
 from config import HK_TIMEZONE, logger
-from database import db_pool
+from database import DatabasePool  # Import the class instead of db_pool
+from ai import get_ai_summary
 
 
 async def summarize_in_range(update: Update, start_time: datetime, end_time: datetime, period_name: str) -> None:
     chat_id = update.message.chat_id
     logger.info(f"Starting summarization for {period_name} in chat {chat_id}")
 
-    if db_pool is None:
-        logger.error("Database pool not initialized")
+    try:
+        db_pool = DatabasePool.get_pool()
+    except RuntimeError as e:
+        logger.error(f"Database error: {e}")
         await update.message.reply_text("哎呀，資料庫未準備好，請稍後再試！")
         return
 
@@ -73,8 +73,10 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    if db_pool is None:
-        logger.error("Database pool not initialized")
+    try:
+        db_pool = DatabasePool.get_pool()
+    except RuntimeError as e:
+        logger.error(f"Database error: {e}")
         await update.message.reply_text("哎呀，資料庫未準備好，請稍後再試！")
         return
 
