@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import ContextTypes
-from config import HK_TIMEZONE, logger, db_pool
+from config import HK_TIMEZONE, logger
+from database import db_pool
 from ai import get_ai_summary
 
 
