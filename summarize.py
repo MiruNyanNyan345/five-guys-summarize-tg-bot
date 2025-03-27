@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
+
 from telegram import Update
 from telegram.ext import ContextTypes
+
+from ai import get_ai_summary
 from config import HK_TIMEZONE, logger
 from database import db_pool
-from ai import get_ai_summary
 
 
 async def summarize_in_range(update: Update, start_time: datetime, end_time: datetime, period_name: str) -> None:
@@ -114,3 +116,51 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         )
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
+
+
+async def summarize_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(HK_TIMEZONE)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    await summarize_in_range(update, start_of_day, now, "全日")
+
+
+async def summarize_morning(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(HK_TIMEZONE)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    morning_start = start_of_day.replace(hour=6, minute=0)
+    morning_end = start_of_day.replace(hour=12, minute=0)
+    if now < morning_end:
+        morning_end = now
+    await summarize_in_range(update, morning_start, morning_end, "今日早晨 (06:00-12:00)")
+
+
+async def summarize_afternoon(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(HK_TIMEZONE)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    afternoon_start = start_of_day.replace(hour=12, minute=0)
+    afternoon_end = start_of_day.replace(hour=18, minute=0)
+    if now < afternoon_end:
+        afternoon_end = now
+    await summarize_in_range(update, afternoon_start, afternoon_end, "今日下午 (12:00-18:00)")
+
+
+async def summarize_night(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(HK_TIMEZONE)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    night_start = start_of_day.replace(hour=18, minute=0)
+    night_end = start_of_day + timedelta(days=1)
+    if now < night_end:
+        night_end = now
+    await summarize_in_range(update, night_start, night_end, "今晚 (18:00-05:59)")
+
+
+async def summarize_last_hour(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(HK_TIMEZONE)
+    last_hour_start = now - timedelta(hours=1)
+    await summarize_in_range(update, last_hour_start, now, "過去一小時")
+
+
+async def summarize_last_3_hours(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    now = datetime.now(HK_TIMEZONE)
+    last_3_hours_start = now - timedelta(hours=3)
+    await summarize_in_range(update, last_3_hours_start, now, "過去三小時")
