@@ -8,15 +8,23 @@ db_pool = None
 
 def init_db_pool():
     global db_pool
+    if db_pool is not None:
+        logger.info("Database pool already initialized")
+        return
     try:
         db_pool = psycopg2.pool.SimpleConnectionPool(1, 20, dsn=DB_URL)
-        print("Database pool initialized")
+        if db_pool:
+            logger.info("Database pool initialized successfully")
+        else:
+            raise ValueError("Database pool initialization returned None")
     except Exception as e:
-        print(f"Failed to initialize database pool: {e}")
-        raise
+        logger.error(f"Failed to initialize database pool: {e}")
+        raise RuntimeError(f"Database pool initialization failed: {e}")
 
 
 def init_db():
+    if db_pool is None:
+        raise RuntimeError("Database pool not initialized")
     conn = None
     try:
         conn = db_pool.getconn()
@@ -26,15 +34,14 @@ def init_db():
                 id SERIAL PRIMARY KEY,
                 chat_id BIGINT,
                 user_name TEXT,
-                user_id TEXT,
                 text TEXT,
                 timestamp TIMESTAMP
             )
         """)
         conn.commit()
-        print("Database schema initialized")
+        logger.info("Database schema initialized")
     except Exception as e:
-        print(f"Failed to initialize database: {e}")
+        logger.error(f"Failed to initialize database schema: {e}")
         raise
     finally:
         if conn:
@@ -53,6 +60,11 @@ async def log_message(update, context):
             user_name += " " + user.last_name
         user_id = user.id
         logger.info(f"Received message in chat {chat_id} from {user_name}: {message}")
+
+        if db_pool is None:
+            logger.error("Database pool not initialized")
+            await update.message.reply_text("哎呀，資料庫未準備好，請稍後再試！")
+            return
 
         conn = None
         try:
