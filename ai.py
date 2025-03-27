@@ -9,7 +9,8 @@ def get_ai_summary(text: str) -> str:
             model=MODEL,
             messages=[
                 {"role": "user",
-                 "content": f'{";".join(SUMMARIZE_PROMPTS)};以下為需要總結的對話:{text}'},
+                 "content": text
+                 },
             ],
             stream=False
         )
