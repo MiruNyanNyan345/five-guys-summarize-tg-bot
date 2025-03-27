@@ -26,14 +26,14 @@ COMPLIMENT_PROMPTS = [
     "同時讚美佢嘅所有，由外貌，頭腦，說話，相處等",
     "提供對方滿滿嘅情緒價值",
     "字數控制喺70字內",
-    "加啲emoji，保持連登仔tone，唔好改用戶名，格式要用 Telegram Markdown",
+    "加啲emoji，唔好改用戶名，格式要用 Telegram Markdown",
 ]
 
 # Golden prompts
 GOLDEN_PROMPTS = [
     "用繁體中文同港式口語，分析以下對話，揀出今日嘅『金句王』",
     "即係講咗最多有趣、幽默或令人印象深刻嘅話嘅用戶。列出你揀嘅理由（50字內）",
-    "加啲emoji，保持連登仔tone，唔好改用戶名，格式要用 Telegram Markdown",
+    "加啲emoji，唔好改用戶名，格式要用 Telegram Markdown",
 ]
 
 # Summarize prompts
