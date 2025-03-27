@@ -191,7 +191,7 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 async def summarize_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     now = datetime.now(HK_TIMEZONE)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     await summarize_in_range(update, start_of_day, now, "全日")
 
 
