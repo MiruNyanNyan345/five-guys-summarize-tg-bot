@@ -26,6 +26,7 @@ def init_db():
                 id SERIAL PRIMARY KEY,
                 chat_id BIGINT,
                 user_name TEXT,
+                user_id TEXT,
                 text TEXT,
                 timestamp TIMESTAMP
             )
@@ -50,7 +51,7 @@ async def log_message(update, context):
         user_name = user.first_name if user.first_name else '唔知邊條粉蛋'
         if user.last_name:
             user_name += " " + user.last_name
-
+        user_id = user.id
         logger.info(f"Received message in chat {chat_id} from {user_name}: {message}")
 
         conn = None
@@ -58,8 +59,8 @@ async def log_message(update, context):
             conn = db_pool.getconn()
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO messages (chat_id, user_name, text, timestamp) VALUES (%s, %s, %s, %s)",
-                (chat_id, user_name, message, timestamp)
+                "INSERT INTO messages (chat_id, user_name, user_id, text, timestamp) VALUES (%s, %s, %s, %s, %s)",
+                (chat_id, user_name, user_id, message, timestamp)
             )
             conn.commit()
             logger.info(f"Message saved to database for chat {chat_id}")
