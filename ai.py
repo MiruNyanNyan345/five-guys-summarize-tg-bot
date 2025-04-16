@@ -37,3 +37,21 @@ def get_ai_apology() -> str:
     except Exception as e:
         print(f"Error in get_ai_apology: {e}")
         return '哎呀，道歉失敗，唔好打我🙏'
+
+def get_ai_love_quote() -> str:
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "user",
+                 "content": "用繁體中文寫一句土味情話，香港式口語，搞笑但甜蜜，30字以內，帶emoji，不用加上註解"},
+            ],
+            stream=False
+        )
+        love_quote = response.choices[0].message.content
+        love_quote += "\n\n免責聲明: 土味情話純屬娛樂😘請勿當真💖"
+        return love_quote
+    except Exception as e:
+        print(f"Error in get_love_quote: {e}")
+        return '哎呀，情話生成失敗，愛你唔使講😜'

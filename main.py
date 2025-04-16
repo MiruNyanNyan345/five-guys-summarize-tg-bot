@@ -6,6 +6,7 @@ from database import DatabasePool, init_db, log_message  # Import DatabasePool i
 from summarize import (summarize_day, summarize_morning, summarize_afternoon,
                        summarize_night, summarize_last_hour, summarize_last_3_hours,
                        summarize_user, summarize_golden_quote_king)
+from love import send_love_quote
 from ai import get_ai_apology
 
 application = Application.builder().token(TOKEN).build()
@@ -23,7 +24,6 @@ async def apologize(update, context):
         await waiting_message.edit_text(apology)
     else:
         await waiting_message.edit_text('哎呀，道歉失敗，唔好打我🙏')
-
 
 if __name__ == "__main__":
     try:
@@ -46,6 +46,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("golden_quote_king", summarize_golden_quote_king))
     application.add_handler(CommandHandler("compliment", compliment_user))
     application.add_handler(CommandHandler("apologize", apologize))
+    application.add_handler(CommandHandler("love", send_love_quote))
 
     print("Starting bot...")
     application.run_polling()
