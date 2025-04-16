@@ -38,14 +38,14 @@ def get_ai_apology() -> str:
         print(f"Error in get_ai_apology: {e}")
         return '哎呀，道歉失敗，唔好打我🙏'
 
-def get_ai_love_quote() -> str:
+def get_ai_love_quote(username: str) -> str:
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     try:
         response = client.chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "user",
-                 "content": "用繁體中文寫一句土味情話，香港式口語，搞笑但甜蜜，30字以內，帶emoji，不用加上註解"},
+                 "content": f"#上https://www.threads.net/上搵一句熱門的土味情話\n#將情話的對像轉換成{username}\n#轉換成繁體中文\n#要求搞笑，甜蜜，肉麻# 加上帶emoji\n#不用解析"},
             ],
             stream=False
         )
