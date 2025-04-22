@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 TOKEN = config('BOT_TOKEN')
 
 # Model and API settings
-MODEL = "deepseek-chat"
+MODEL = config("MODEL")
 API_KEY = config("API_KEY")
-BASE_URL = "https://api.deepseek.com"
+BASE_URL_CHAT = config('BASE_URL_CHAT')
 
 # Hong Kong timezone (UTC+8)
 HK_TIMEZONE = timezone(timedelta(hours=8))
