@@ -55,3 +55,20 @@ def get_ai_love_quote(username: str) -> str:
     except Exception as e:
         print(f"Error in get_love_quote: {e}")
         return '哎呀，情話生成失敗，愛你唔使講😜'
+    
+def get_ai_generate_image(text: str) -> str:
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+    try:
+        response = client.images.generate(
+            model="grok-2-image-latest", 
+            prompt=text,
+            n=1,
+            size="512x512",  # Options: 256x256, 512x512, 1024x1024 (DALL·E 3 supports more)
+            quality="standard",  # Options: standard, hd (DALL·E 3 only)
+            response_format="url"
+        )
+        image_url = response.data[0].url
+        return image_url
+    except Exception as e:
+        print(f"Error in get_openai_image: {e}")
+        return '哎呀，生成圖片失敗，唔好怪我🙏'
