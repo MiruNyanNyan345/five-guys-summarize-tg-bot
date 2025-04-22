@@ -75,7 +75,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("compliment", compliment_user))
     application.add_handler(CommandHandler("apologize", apologize))
     application.add_handler(CommandHandler("love", send_love_quote))
-    application.add_handler(CommandHandler("summarize_image"), summarize_day_image)
+    application.add_handler(CommandHandler("summarize_image", summarize_day_image))
 
     print("Starting bot...")
     application.run_polling()
