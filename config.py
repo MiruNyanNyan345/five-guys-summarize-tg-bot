@@ -14,7 +14,7 @@ TOKEN = config('BOT_TOKEN')
 # Model and API settings
 MODEL = config("MODEL")
 API_KEY = config("API_KEY")
-BASE_URL_CHAT = config('BASE_URL_CHAT')
+BASE_URL = config('BASE_URL')
 
 # Hong Kong timezone (UTC+8)
 HK_TIMEZONE = timezone(timedelta(hours=8))

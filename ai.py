@@ -1,9 +1,9 @@
 from openai import OpenAI
-from config import API_KEY, BASE_URL_CHAT, MODEL, SUMMARIZE_PROMPTS
+from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS
 
 
 def get_ai_summary(text: str) -> str:
-    client = OpenAI(api_key=API_KEY, base_url=BASE_URL_CHAT)
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     try:
         response = client.chat.completions.create(
             model=MODEL,
@@ -21,7 +21,7 @@ def get_ai_summary(text: str) -> str:
 
 
 def get_ai_apology() -> str:
-    client = OpenAI(api_key=API_KEY, base_url=BASE_URL_CHAT)
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     try:
         response = client.chat.completions.create(
             model=MODEL,
@@ -39,7 +39,7 @@ def get_ai_apology() -> str:
         return '哎呀，道歉失敗，唔好打我🙏'
 
 def get_ai_love_quote(username: str) -> str:
-    client = OpenAI(api_key=API_KEY, base_url=BASE_URL_CHAT)
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     try:
         response = client.chat.completions.create(
             model=MODEL,
