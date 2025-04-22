@@ -5,7 +5,7 @@ from config import TOKEN, logger
 from database import DatabasePool, init_db, log_message  # Import DatabasePool instead of init_db_pool
 from summarize import (summarize_day, summarize_morning, summarize_afternoon,
                        summarize_night, summarize_last_hour, summarize_last_3_hours,
-                       summarize_user, summarize_golden_quote_king, summarize_day_image)
+                       summarize_user, summarize_golden_quote_king)
 from love import send_love_quote
 from ai import get_ai_apology
 
