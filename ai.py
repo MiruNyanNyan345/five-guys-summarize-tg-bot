@@ -63,8 +63,6 @@ def get_ai_generate_image(text: str) -> str:
             model="grok-2-image-latest", 
             prompt=text,
             n=1,
-            size="512x512",  # Options: 256x256, 512x512, 1024x1024 (DALL·E 3 supports more)
-            quality="standard",  # Options: standard, hd (DALL·E 3 only)
             response_format="url"
         )
         image_url = response.data[0].url
