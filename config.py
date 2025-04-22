@@ -62,5 +62,14 @@ SUMMARIZE_USER_PROMPTS = [
     "內容文字格式要用 Telegram Markdown"
 ]
 
+# SUMMARIZE MESSAGES' IMAGE
+SUMMARIZE_MESSAGES_IMAGE_PROMPTS = [
+    "創建一張視覺上吸引人的圖片，用以總結一場對話的關鍵內容",
+    "圖片風格為現代、乾淨且專業，背景為柔和的漸層色（藍色或綠色系",
+    "包含簡潔的圖示或符號（如對話框、筆記本、燈泡等）來代表溝通和想法。"
+    "圖片中需包含文字，文字必須使用繁體中文，字體為清晰的襯線體或無襯線體，總結對話的重點（例如：討論主題、結論或行動項目）。",
+    "文字內容應簡潔有力，控制在20-30字以內"
+]
+
 # Database URL
 DB_URL = os.getenv("DATABASE_URL", config("DATABASE_URL"))
