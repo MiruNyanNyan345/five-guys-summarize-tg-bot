@@ -7,7 +7,7 @@ from summarize import (summarize_day, summarize_morning, summarize_afternoon,
                        summarize_night, summarize_last_hour, summarize_last_3_hours,
                        summarize_user, summarize_golden_quote_king, summarize_day_image)
 from love import send_love_quote
-from ai import get_ai_apology, get_ai_generate_image
+from ai import get_ai_apology
 
 application = Application.builder().token(TOKEN).build()
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("compliment", compliment_user))
     application.add_handler(CommandHandler("apologize", apologize))
     application.add_handler(CommandHandler("love", send_love_quote))
-    application.add_handler(CommandHandler("summarize_image", summarize_day_image))
+    application.add_handler(CommandHandler("image", generate_image))
 
     print("Starting bot...")
     application.run_polling()

@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import ContextTypes
-from config import HK_TIMEZONE, logger, GOLDEN_PROMPTS, SUMMARIZE_PROMPTS, SUMMARIZE_USER_PROMPTS, SUMMARIZE_MESSAGES_IMAGE_PROMPTS
+from config import HK_TIMEZONE, logger, GOLDEN_PROMPTS, SUMMARIZE_PROMPTS, SUMMARIZE_USER_PROMPTS
 from database import DatabasePool  # Import the class instead of db_pool
-from ai import get_ai_summary, get_ai_generate_image
+from ai import get_ai_summary
 
 
 async def summarize_golden_quote_king(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -235,79 +235,3 @@ async def summarize_last_3_hours(update: Update, context: ContextTypes.DEFAULT_T
     now = datetime.now(HK_TIMEZONE)
     last_3_hours_start = now - timedelta(hours=3)
     await summarize_in_range(update, last_3_hours_start, now, "過去三小時")
-
-
-async def summarize_day_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    chat_id = update.message.chat_id
-    logger.info(f"Starting image summarization for daily conversation in chat {chat_id}")
-
-    now = datetime.now(HK_TIMEZONE)
-    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    try:
-        db_pool = DatabasePool.get_pool()
-    except RuntimeError as e:
-        logger.error(f"Database error: {e}")
-        await update.message.reply_text("哎呀，資料庫未準備好，請稍後再試！")
-        return
-
-    conn = None
-    try:
-        conn = db_pool.getconn()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT user_name, text, timestamp FROM messages
-            WHERE chat_id = %s AND timestamp >= %s AND timestamp < %s
-            ORDER BY timestamp ASC
-        """, (chat_id, start_of_day, now))
-        rows = cursor.fetchall()
-    except Exception as e:
-        logger.error(f"Failed to query database: {e}")
-        await update.message.reply_text("哎呀，讀取訊息時出錯！請稍後再試。")
-        return
-    finally:
-        if conn:
-            db_pool.putconn(conn)
-
-    if not rows:
-        await update.message.reply_text("今日靜L過太空呀，點畫今日嘅對話呀！")
-        logger.info(f"No messages found for image summarization in chat {chat_id}")
-        return
-
-    day_messages = [f"{row[0]}: {row[1]}" for row in rows]
-    text_to_summarize = "\n".join(day_messages)
-
-    waiting_message = await update.message.reply_text("幫緊你畫今日嘅對話總結… ⏳")
-    
-    # Generate text summary
-    summary = get_ai_summary(f'{";".join(SUMMARIZE_PROMPTS)};以下為需要總結的對話:{text_to_summarize}')
-    logger.info(f"Generated text summary for image in chat {chat_id}: {summary}")
-
-    if not summary or summary == '系統想方加(出錯)，好對唔住':
-        await waiting_message.edit_text('哎呀，總結對話失敗，唔好怪我🙏')
-        return
-
-    # Create image prompt based on the summary
-    image_prompt = f"{";".join(SUMMARIZE_MESSAGES_IMAGE_PROMPTS)}以下為對話的總結內容: {summary}"
-    
-    # Generate image
-    image_url = get_ai_generate_image(image_prompt)
-    logger.info(f"Image generation result for chat {chat_id}: {image_url}")
-
-    formatted_start = start_of_day.strftime("%Y-%m-%d %H:%M")
-    formatted_end = now.strftime("%Y-%m-%d %H:%M")
-    
-    if image_url and not image_url.startswith('哎呀'):
-        try:
-            await context.bot.send_photo(
-                chat_id=chat_id,
-                photo=image_url,
-                caption=f"由 {formatted_start} 到 {formatted_end} 嘅對話圖片總結 🎨\n文字總結: {summary}\n\n免責聲明: 圖片由OpenAI生成，純屬娛樂🖼️",
-                parse_mode='Markdown'
-            )
-            await waiting_message.delete()  # Remove waiting message
-        except Exception as e:
-            logger.error(f"Error sending image in chat {chat_id}: {e}")
-            await waiting_message.edit_text("哎呀，發送圖片失敗，唔好怪我🙏")
-    else:
-        await waiting_message.edit_text(image_url or '哎呀，生成圖片失敗，唔好怪我🙏')
