@@ -8,9 +8,36 @@ from summarize import (summarize_day, summarize_morning, summarize_afternoon,
                        summarize_user, summarize_golden_quote_king)
 from love import send_love_quote
 from ai import get_ai_apology
+import pytz
+from datetime import datetime
 
 application = Application.builder().token(TOKEN).build()
 
+async def countdown(update, context):
+    chat_id = update.message.chat_id
+    logger.info(f"Starting countdown for chat {chat_id}")
+
+    # Define Hong Kong time zone
+    hk_tz = pytz.timezone('Asia/Hong_Kong')
+    
+    # Get current time in Hong Kong
+    now = datetime.now(hk_tz)
+    
+    # Set target time to 6 PM today in Hong Kong
+    target = now.replace(hour=18, minute=0, second=0, microsecond=0)
+    
+    # If current time is past 6 PM, inform user workday is over
+    if now > target:
+        await update.message.reply_text("放工啦！開心返屋企啦！🎉")
+        return
+
+    # Calculate time difference in minutes
+    time_left = target - now
+    total_minutes = time_left.seconds // 60
+
+    # Format the countdown message
+    countdown_message = f"仲有 {total_minutes} 分鐘 就放工！💼 捱多陣啦！"
+    await update.message.reply_text(countdown_message)
 
 async def apologize(update, context):
     chat_id = update.message.chat_id
@@ -76,6 +103,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("apologize", apologize))
     application.add_handler(CommandHandler("love", send_love_quote))
     application.add_handler(CommandHandler("image", generate_image))
+    application.add_handler(CommandHandler("countdown", countdown))
 
     print("Starting bot...")
     application.run_polling()
