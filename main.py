@@ -23,14 +23,23 @@ async def countdown(update, context):
     # Get current time in Hong Kong
     now = datetime.now(hk_tz)
     
+    # Get day of the week (0 = Monday, 6 = Sunday)
+    weekday = now.weekday()
+    
+    # Check if it's Saturday or Sunday
+    if weekday >= 5:  # Saturday (5) or Sunday (6)
+        await update.message.reply_text("放緊假呀！😎")
+        return
+    
+    # Check if it's Monday to Friday outside 9 AM to 6 PM
+    current_hour = now.hour
+    if current_hour < 9 or current_hour >= 18:
+        await update.message.reply_text("放左工了！🎉")
+        return
+    
     # Set target time to 6 PM today in Hong Kong
     target = now.replace(hour=18, minute=0, second=0, microsecond=0)
     
-    # If current time is past 6 PM, inform user workday is over
-    if now > target:
-        await update.message.reply_text("放工啦！開心返屋企啦！🎉")
-        return
-
     # Calculate time difference in minutes
     time_left = target - now
     total_minutes = time_left.seconds // 60
