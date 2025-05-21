@@ -114,7 +114,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("love", send_love_quote))
     application.add_handler(CommandHandler("image", generate_image))
     application.add_handler(CommandHandler("countdown", countdown))
-    application.add_handler(CommandHandler("fuck", fuck_user))
+    application.add_handler(CommandHandler("diu", fuck_user))
 
     print("Starting bot...")
     application.run_polling()
