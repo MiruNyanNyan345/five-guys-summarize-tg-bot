@@ -24,7 +24,7 @@ async def fuck_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Prepare the prompt for AI-generated punishment, focusing on the replied message
     prompt = (
         f"用繁體中文同香港式口語，針對{target_username}嘅以下訊息：'{target_message}'，"
-        f"可以包括港式粗口，",
+        f"可以包括港式粗口"
         f"寫一句搞笑、輕鬆、唔會得罪人嘅『懲罰』說話，字數30以內，帶emoji，唔使解釋，純屬娛樂！"
     )
 
