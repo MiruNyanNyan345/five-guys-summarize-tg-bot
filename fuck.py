@@ -23,9 +23,11 @@ async def fuck_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # Prepare the prompt for AI-generated punishment, focusing on the replied message
     prompt = (
-        f"用繁體中文同香港式口語，以及港式粗口，針對{target_username}嘅以下訊息：'{target_message}'，"
-        f"用搞笑、輕鬆嘅語氣，用港產片對白去屌{target_user}"
-        "嚴禁屌人老母，以及人身攻擊！字數30以內，帶emoji，唔使解釋，純屬娛樂！"
+        f"用繁體中文同香港式口語，配搭港式粗口，針對{target_username}嘅以下訊息：'{target_message}'，"
+        f"用搞笑,輕鬆嘅語氣，去屌{target_user}"
+        "模仿『低俗喜劇』中的角色『暴龍哥』去屌人"
+        "嚴禁屌人老母，以及人身攻擊！"
+        "字數30以內，帶emoji，唔使解釋，純屬娛樂！"
     )
 
     waiting_message = await message.reply_text(f"幫你諗緊點Diu7 {target_username}… ⏳")
