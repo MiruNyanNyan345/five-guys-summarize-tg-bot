@@ -24,10 +24,10 @@ async def fuck_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Prepare the prompt for AI-generated punishment, focusing on the replied message
     prompt = (
         f"用繁體中文同香港式口語，以及港式粗口，針對{target_username}嘅以下訊息：'{target_message}'，"
-        f"用搞笑、輕鬆、唔會得罪人嘅語氣去屌{target_user}，字數30以內，帶emoji，唔使解釋，純屬娛樂！"
+        f"用搞笑、輕鬆嘅語氣，模仿香港藝人林雪口吻去屌{target_user}，字數30以內，帶emoji，唔使解釋，純屬娛樂！"
     )
 
-    waiting_message = await message.reply_text(f"幫你諗緊點Diu7{target_username}… ⏳")
+    waiting_message = await message.reply_text(f"幫你諗緊點Diu7 {target_username}… ⏳")
     punishment = get_ai_summary(prompt)
     logger.info(f"Generated punishment for {target_username} in chat {chat_id}: {punishment}")
 
@@ -35,7 +35,7 @@ async def fuck_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     formatted_time = now.strftime("%Y-%m-%d %H:%M")
     if punishment and punishment != '系統想方加(出錯)，好對唔住':
         await waiting_message.edit_text(
-            f"😈{punishment}\n\n免責聲明: 純屬搞亂，唔好認真😂",
+            f"😈{punishment}",
             parse_mode='Markdown'
         )
     else:
