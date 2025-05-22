@@ -11,7 +11,7 @@ async def fuck_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # Check if the message is a reply to another message
     if not message.reply_to_message:
-        await message.reply_text("請回覆某個用戶嘅訊息，再用 /fuck 來俾佢一啲搞笑嘅『懲罰』！😜")
+        await message.reply_text("請回覆某個用戶嘅訊息，再用 /diu 來俾佢一啲搞笑嘅『懲罰』！😜")
         return
 
     # Get the user and the replied-to message content
@@ -24,7 +24,8 @@ async def fuck_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Prepare the prompt for AI-generated punishment, focusing on the replied message
     prompt = (
         f"用繁體中文同香港式口語，以及港式粗口，針對{target_username}嘅以下訊息：'{target_message}'，"
-        f"用搞笑、輕鬆嘅語氣，模仿香港藝人林雪口吻去屌{target_user}，字數30以內，帶emoji，唔使解釋，純屬娛樂！"
+        f"用搞笑、輕鬆嘅語氣，用港產片對白去屌{target_user}"
+        "嚴禁屌人老母，以及人身攻擊！字數30以內，帶emoji，唔使解釋，純屬娛樂！"
     )
 
     waiting_message = await message.reply_text(f"幫你諗緊點Diu7 {target_username}… ⏳")
