@@ -58,13 +58,12 @@ async def compliment_user(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     # Prepare the AI prompt with user context
     messages_context = "\n".join(user_messages) if user_messages else "無今日訊息記錄"
     compliment_prompt = (
-        f'{";".join(COMPLIMENT_PROMPTS)}'
         f"\n以下係目標用戶: ** {target_username} **"
         f"\n佢今日講咗嘅話:\n{messages_context}"
     )
 
     waiting_message = await message.reply_text(f"整緊讚賞俾 ** {target_username} **… ⏳")
-    compliment = get_ai_summary(compliment_prompt, LIHKG_BASE_PROMPT)  # Reuse get_ai_summary with custom prompt
+    compliment = get_ai_summary(compliment_prompt, LIHKG_BASE_PROMPT+"\t"+COMPLIMENT_PROMPTS )  # Reuse get_ai_summary with custom prompt
     logger.info(f"Generated compliment for user {target_username} in chat {chat_id}: {compliment}")
 
     if compliment and compliment != '系統想方加(出錯)，好對唔住':

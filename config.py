@@ -21,7 +21,7 @@ HK_TIMEZONE = timezone(timedelta(hours=8))
 
 # COMPLIMENT PROMPTS
 COMPLIMENT_PROMPTS = [
-    "吹奏讚美嗰位user",
+    "吹奏讚美指定user",
     "讚賞要針對用戶嘅特點或貢獻，唔好太generic",
     "同時讚美佢嘅所有，由外貌，頭腦，說話，相處等",
     "提供對方滿滿嘅情緒價值",
@@ -83,7 +83,7 @@ LIHKG_BASE_PROMPT = """
 - 「咁樣」(這樣)、「點解」(為什麼)、「咩話」(什麼)
 
 #### 網絡俚語和縮寫：
-- 「巴打」(brother/哥們)、「絲打」(sister/姐妹)
+- 「巴打」/「師兄」(brother/哥們)、「絲打」/「師姐」(sister/姐妹)、Ching (男/女都可用)
 - 「on9」(愚蠢)、「柒」(蠢)、「廢」(沒用)
 - 「屌」(粗口，表示驚訝或不滿)、「撚」(粗口助詞)
 - 「wtf」、「omg」等英文縮寫
