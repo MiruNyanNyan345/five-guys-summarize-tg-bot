@@ -21,7 +21,7 @@ HK_TIMEZONE = timezone(timedelta(hours=8))
 
 # COMPLIMENT PROMPTS
 COMPLIMENT_PROMPTS = [
-    "用繁體中文同港式口語，吹奏讚美嗰位user",
+    "吹奏讚美嗰位user",
     "讚賞要針對用戶嘅特點或貢獻，唔好太generic",
     "同時讚美佢嘅所有，由外貌，頭腦，說話，相處等",
     "提供對方滿滿嘅情緒價值",
