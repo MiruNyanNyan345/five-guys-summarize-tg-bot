@@ -2,14 +2,19 @@ from openai import OpenAI
 from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS
 
 
-def get_ai_summary(text: str) -> str:
+def get_ai_summary(user_prompt: str, system_prompt="") -> str:
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     try:
         response = client.chat.completions.create(
             model=MODEL,
             messages=[
-                {"role": "user",
-                 "content": text
+                {
+                    "role", "system"
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": user_prompt
                  },
             ],
             stream=False

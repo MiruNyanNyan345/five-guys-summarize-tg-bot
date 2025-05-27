@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from config import logger, HK_TIMEZONE
+from config import logger, HK_TIMEZONE, LIHKG_BASE_PROMPT
 from ai import get_ai_summary
 from datetime import datetime
 
@@ -22,15 +22,12 @@ async def fuck_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         target_username += " " + target_user.last_name
 
     # Prepare the prompt for AI-generated punishment, focusing on the replied message
-    prompt = (
-        f"用繁體中文同香港式口語，配搭港式粗口，針對{target_username}嘅以下訊息：'{target_message}'，"
-        f"利用『低俗喜劇』中的角色『暴龍哥』的對白去屌{target_user}"
-        "嚴禁屌人老母"
-        "字數30以內，帶emoji，唔使解釋，純屬娛樂！"
+    user_prompt = (
+        f"針對{target_username}嘅以下訊息：'{target_message}'，去屌{target_user}"
     )
 
     waiting_message = await message.reply_text(f"幫你諗緊點Diu7 {target_username}… ⏳")
-    punishment = get_ai_summary(prompt)
+    punishment = get_ai_summary(user_prompt, LIHKG_BASE_PROMPT)
     logger.info(f"Generated punishment for {target_username} in chat {chat_id}: {punishment}")
 
     now = datetime.now(HK_TIMEZONE)
