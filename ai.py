@@ -9,7 +9,7 @@ def get_ai_summary(user_prompt: str, system_prompt="") -> str:
             model=MODEL,
             messages=[
                 {
-                    "role", "system",
+                    "role": "system",
                     "content": system_prompt
                 },
                 {
