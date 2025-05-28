@@ -39,8 +39,10 @@ def init_db():
                 id SERIAL PRIMARY KEY,
                 chat_id BIGINT,
                 user_name TEXT,
+                user_id BIGINT,
                 text TEXT,
-                timestamp TIMESTAMP
+                timestamp TIMESTAMP,
+                chat_title TEXT
             )
         """)
         conn.commit()
@@ -59,12 +61,14 @@ async def log_message(update, context):
         user = update.message.from_user
         message = update.message.text
         timestamp = update.message.date
+        user_id = user.id
+        chat_title = update.message.chat.title if update.message.chat.title else "Private Chat"
 
         user_name = user.first_name if user.first_name else '唔知邊條粉蛋'
         if user.last_name:
             user_name += " " + user.last_name
 
-        logger.info(f"Received message in chat {chat_id} from {user_name}: {message}")
+        logger.info(f"Received message in chat {chat_id} ({chat_title}) from {user_name} (ID: {user_id}): {message}")
 
         db_pool = DatabasePool.get_pool()
         conn = None
@@ -72,11 +76,11 @@ async def log_message(update, context):
             conn = db_pool.getconn()
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO messages (chat_id, user_name, text, timestamp) VALUES (%s, %s, %s, %s)",
-                (chat_id, user_name, message, timestamp)
+                "INSERT INTO messages (chat_id, user_name, user_id, text, timestamp, chat_title) VALUES (%s, %s, %s, %s, %s, %s)",
+                (chat_id, user_name, user_id, message, timestamp, chat_title)
             )
             conn.commit()
-            logger.info(f"Message saved to database for chat {chat_id}")
+            logger.info(f"Message saved to database for chat {chat_id} ({chat_title})")
         except Exception as e:
             logger.error(f"Failed to log message to database: {e}")
             await update.message.reply_text("哎呀，儲存訊息時出錯！請稍後再試。")

@@ -49,6 +49,8 @@ def get_ai_love_quote(username: str) -> str:
         response = client.chat.completions.create(
             model=MODEL,
             messages=[
+                {"role": "system",
+                 "content": LIHKG_BASE_PROMPT},
                 {"role": "user",
                  "content": f"#上https://www.threads.net/上搵熱門的土味情話\n#只返回一句\n#將情話的對像轉換成{username}\n#轉換成繁體中文\n#要求搞笑，甜蜜，肉麻# 加上帶emoji\n#不用解析"},
             ],

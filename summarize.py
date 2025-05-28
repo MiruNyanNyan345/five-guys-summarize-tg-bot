@@ -135,6 +135,7 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # Get the user from the replied-to message
     target_user = message.reply_to_message.from_user
+    target_user_id = target_user.id
     target_username = target_user.first_name if target_user.first_name else '唔知邊條粉蛋'
     if target_user.last_name:
         target_username += " " + target_user.last_name
@@ -155,9 +156,9 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         cursor = conn.cursor()
         cursor.execute("""
             SELECT user_name, text, timestamp FROM messages
-            WHERE chat_id = %s AND user_name = %s AND timestamp >= %s AND timestamp < %s
+            WHERE chat_id = %s AND user_id = %s AND timestamp >= %s AND timestamp < %s
             ORDER BY timestamp ASC
-        """, (chat_id, target_username, start_of_day, now))
+        """, (chat_id, target_user_id, start_of_day, now))
         rows = cursor.fetchall()
     except Exception as e:
         logger.error(f"Failed to query database: {e}")
