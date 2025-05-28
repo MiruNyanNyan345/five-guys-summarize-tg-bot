@@ -158,7 +158,7 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             SELECT user_name, text, timestamp FROM messages
             WHERE chat_id = %s AND user_id = %s AND timestamp >= %s AND timestamp < %s
             ORDER BY timestamp ASC
-        """, (chat_id, target_user_id, start_of_day, now))
+        """, (chat_id, int(target_user_id), start_of_day, now))
         rows = cursor.fetchall()
     except Exception as e:
         logger.error(f"Failed to query database: {e}")
