@@ -109,7 +109,7 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
     text_to_summarize = "\n".join(day_messages)
 
     waiting_message = await update.message.reply_text("幫緊你幫緊你… ⏳")
-    summary = get_ai_summary(f'{";".join(SUMMARIZE_PROMPTS)};以下為需要總結的對話:{text_to_summarize}')
+    summary = get_ai_summary(f'以下為需要總結的對話:{text_to_summarize}')
     logger.info(f"Generated summary for {period_name} in chat {chat_id}: {summary}")
 
     formatted_start = start_time.astimezone(HK_TIMEZONE).strftime("%Y-%m-%d %H:%M")

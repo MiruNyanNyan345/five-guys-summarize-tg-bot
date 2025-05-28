@@ -10,7 +10,7 @@ def get_ai_summary(user_prompt: str, system_prompt="") -> str:
             messages=[
                 {
                     "role": "system",
-                    "content": system_prompt
+                    "content": SUMMARIZE_PROMPTS
                 },
                 {
                     "role": "user",
