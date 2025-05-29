@@ -1,5 +1,5 @@
 from openai import OpenAI
-from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS
+from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS, LIHKG_BASE_PROMPT
 
 
 def get_ai_summary(user_prompt: str, system_prompt="") -> str:
