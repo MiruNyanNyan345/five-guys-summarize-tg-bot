@@ -34,8 +34,7 @@ async def fuck_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     formatted_time = now.strftime("%Y-%m-%d %H:%M")
     if punishment and punishment != '系統想方加(出錯)，好對唔住':
         await waiting_message.edit_text(
-            f"😈{punishment}",
-            parse_mode='Markdown'
+            f"😈{punishment}"
         )
     else:
         await waiting_message.edit_text('無氣diu，唔好diu我🙏')
