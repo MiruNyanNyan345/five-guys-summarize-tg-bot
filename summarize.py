@@ -64,8 +64,7 @@ async def summarize_golden_quote_king(update: Update, context: ContextTypes.DEFA
     formatted_end = now.strftime("%Y-%m-%d %H:%M")
     if summary and summary != '系統想方加(出錯)，好對唔住':
         await waiting_message.edit_text(
-            f"由 {formatted_start} 到 {formatted_end} 嘅金句王總結: 🏆\n{summary}",
-            parse_mode='Markdown'
+            f"由 {formatted_start} 到 {formatted_end} 嘅金句王總結: 🏆\n{summary}"
         )
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
@@ -116,8 +115,7 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
     formatted_end = end_time.astimezone(HK_TIMEZONE).strftime("%Y-%m-%d %H:%M")
     if summary and summary != '系統想方加(出錯)，好對唔住':
         await waiting_message.edit_text(
-            f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}",
-            parse_mode='Markdown'
+            f"由{formatted_start} - {formatted_end}嘅{period_name}對話總結為: 📝\n{summary}"
         )
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
@@ -183,8 +181,7 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     formatted_end = now.strftime("%Y-%m-%d %H:%M")
     if summary and summary != '系統想方加(出錯)，好對唔住':
         await waiting_message.edit_text(
-            f"由 {formatted_start} 到 {formatted_end}， ** {target_username} ** 講咗嘅總結: 📝\n{summary}",
-            parse_mode='Markdown'
+            f"由 {formatted_start} 到 {formatted_end}， ** {target_username} ** 講咗嘅總結: 📝\n{summary}"
         )
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')

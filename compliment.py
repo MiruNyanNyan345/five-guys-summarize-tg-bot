@@ -63,13 +63,13 @@ async def compliment_user(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     )
 
     waiting_message = await message.reply_text(f"整緊讚賞俾 ** {target_username} **… ⏳")
-    compliment = get_ai_summary(compliment_prompt, LIHKG_BASE_PROMPT+"\t"+COMPLIMENT_PROMPTS )  # Reuse get_ai_summary with custom prompt
+    compliment = get_ai_summary(compliment_prompt,
+                                LIHKG_BASE_PROMPT + "\t" + COMPLIMENT_PROMPTS)  # Reuse get_ai_summary with custom prompt
     logger.info(f"Generated compliment for user {target_username} in chat {chat_id}: {compliment}")
 
     if compliment and compliment != '系統想方加(出錯)，好對唔住':
         await waiting_message.edit_text(
-            f"俾 ** {target_username} ** 嘅讚賞: 🌟\n{compliment}",
-            parse_mode='Markdown'
+            f"俾 ** {target_username} ** 嘅讚賞: 🌟\n{compliment}"
         )
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')

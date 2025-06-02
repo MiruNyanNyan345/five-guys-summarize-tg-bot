@@ -213,5 +213,9 @@ LIHKG風格：「嘩，呢樣嘢好複雜喎，要諗深啲先得。」
 4. 適度使用，不要過度模仿以免顯得不自然
 """
 
+# SUMMARIZE YOUTUBE VIDEO PROMPTS
+SUMMARIZE_YOUTUBE_VIDEO_PROMPTS = """
+"""
+
 # Database URL
 DB_URL = os.getenv("DATABASE_URL", config("DATABASE_URL"))

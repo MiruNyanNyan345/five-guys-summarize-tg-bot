@@ -15,7 +15,7 @@ def get_ai_summary(user_prompt: str, system_prompt="") -> str:
                 {
                     "role": "user",
                     "content": user_prompt
-                 },
+                },
             ],
             stream=False
         )
@@ -43,6 +43,7 @@ def get_ai_apology() -> str:
         print(f"Error in get_ai_apology: {e}")
         return '哎呀，道歉失敗，唔好打我🙏'
 
+
 def get_ai_love_quote(username: str) -> str:
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     try:
@@ -62,18 +63,3 @@ def get_ai_love_quote(username: str) -> str:
     except Exception as e:
         print(f"Error in get_love_quote: {e}")
         return '哎呀，情話生成失敗，愛你唔使講😜'
-    
-def get_ai_generate_image(text: str) -> str:
-    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
-    try:
-        response = client.images.generate(
-            model="grok-2-image-latest", 
-            prompt=text,
-            n=1,
-            response_format="url"
-        )
-        image_url = response.data[0].url
-        return image_url
-    except Exception as e:
-        print(f"Error in get_openai_image: {e}")
-        return '哎呀，生成圖片失敗，唔好怪我🙏'
