@@ -1,6 +1,7 @@
 from ai import get_ai_love_quote
 from config import HK_TIMEZONE, logger, COMPLIMENT_PROMPTS
 from db import DatabaseOperations
+from datetime import datetime
 
 async def send_love_quote(update, context):
     chat_id = update.message.chat_id
