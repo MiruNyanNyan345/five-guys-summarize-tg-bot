@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import ContextTypes
-from config import HK_TIMEZONE, logger, GOLDEN_PROMPTS, SUMMARIZE_PROMPTS, SUMMARIZE_USER_PROMPTS
-from database import DatabasePool  # Import the class instead of db_pool
+from config import HK_TIMEZONE, logger, GOLDEN_PROMPTS, SUMMARIZE_USER_PROMPTS
+from db import DatabaseOperations
 from ai import get_ai_summary
 
 
@@ -13,30 +13,12 @@ async def summarize_golden_quote_king(update: Update, context: ContextTypes.DEFA
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    try:
-        db_pool = DatabasePool.get_pool()
-    except RuntimeError as e:
-        logger.error(f"Database error: {e}")
-        await update.message.reply_text("哎呀，資料庫未準備好，請稍後再試！")
-        return
+    db_ops = DatabaseOperations()
+    rows = db_ops.get_messages_in_range(chat_id, start_of_day, now)
 
-    conn = None
-    try:
-        conn = db_pool.getconn()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT user_name, text, timestamp FROM messages
-            WHERE chat_id = %s AND timestamp >= %s AND timestamp < %s
-            ORDER BY timestamp ASC
-        """, (chat_id, start_of_day, now))
-        rows = cursor.fetchall()
-    except Exception as e:
-        logger.error(f"Failed to query database: {e}")
+    if rows is None:
         await update.message.reply_text("哎呀，讀取訊息時出錯！請稍後再試。")
         return
-    finally:
-        if conn:
-            db_pool.putconn(conn)
 
     if not rows:
         await update.message.reply_text("今日靜L過太空呀，點揀金句王呀！")
@@ -74,30 +56,12 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
     chat_id = update.message.chat_id
     logger.info(f"Starting summarization for {period_name} in chat {chat_id}")
 
-    try:
-        db_pool = DatabasePool.get_pool()
-    except RuntimeError as e:
-        logger.error(f"Database error: {e}")
-        await update.message.reply_text("哎呀，資料庫未準備好，請稍後再試！")
-        return
+    db_ops = DatabaseOperations()
+    rows = db_ops.get_messages_in_range(chat_id, start_time, end_time)
 
-    conn = None
-    try:
-        conn = db_pool.getconn()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT user_name, text, timestamp FROM messages
-            WHERE chat_id = %s AND timestamp >= %s AND timestamp < %s
-            ORDER BY timestamp ASC
-        """, (chat_id, start_time, end_time))
-        rows = cursor.fetchall()
-    except Exception as e:
-        logger.error(f"Failed to query database: {e}")
+    if rows is None:
         await update.message.reply_text("哎呀，讀取訊息時出錯！請稍後再試。")
         return
-    finally:
-        if conn:
-            db_pool.putconn(conn)
 
     if not rows:
         await update.message.reply_text(f"No messages to summarize for {period_name} in this chat!")
@@ -141,30 +105,12 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    try:
-        db_pool = DatabasePool.get_pool()
-    except RuntimeError as e:
-        logger.error(f"Database error: {e}")
-        await message.reply_text("哎呀，資料庫未準備好，請稍後再試！")
-        return
+    db_ops = DatabaseOperations()
+    rows = db_ops.get_user_messages_in_range(chat_id, target_user_id, start_of_day, now)
 
-    conn = None
-    try:
-        conn = db_pool.getconn()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT user_name, text, timestamp FROM messages
-            WHERE chat_id = %s AND user_id = %s AND timestamp >= %s AND timestamp < %s
-            ORDER BY timestamp ASC
-        """, (chat_id, int(target_user_id), start_of_day, now))
-        rows = cursor.fetchall()
-    except Exception as e:
-        logger.error(f"Failed to query database: {e}")
+    if rows is None:
         await message.reply_text("哎呀，讀取訊息時出錯！請稍後再試。")
         return
-    finally:
-        if conn:
-            db_pool.putconn(conn)
 
     if not rows:
         await message.reply_text(f"今日由00:00開始， ** {target_username} ** 無講過任何野喎！")
