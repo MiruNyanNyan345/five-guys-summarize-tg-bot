@@ -214,7 +214,7 @@ LIHKG風格：「嘩，呢樣嘢好複雜喎，要諗深啲先得。」
 """
 
 # Love System Prompt
-LOVE_SYSTEM_PROMPT """
+LOVE_SYSTEM_PROMPT = """
 # 土味情話生成器系統提示詞
 
 ## 背景設定
