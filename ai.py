@@ -1,5 +1,5 @@
 from openai import OpenAI
-from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS, LIHKG_BASE_PROMPT
+from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS, LIHKG_BASE_PROMPT, LOVE_SYSTEM_PROMPT
 
 
 def get_ai_summary(user_prompt: str, system_prompt="") -> str:
@@ -44,16 +44,16 @@ def get_ai_apology() -> str:
         return '哎呀，道歉失敗，唔好打我🙏'
 
 
-def get_ai_love_quote(username: str) -> str:
+def get_ai_love_quote(username: str, user_messages: str) -> str:
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     try:
         response = client.chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system",
-                 "content": LIHKG_BASE_PROMPT},
+                 "content": LOVE_SYSTEM_PROMPT},
                 {"role": "user",
-                 "content": f"#上https://www.threads.net/上搵熱門的土味情話\n#只返回一句\n#將情話的對像轉換成{username}\n#轉換成繁體中文\n#要求搞笑，甜蜜，肉麻# 加上帶emoji\n#不用解析"},
+                 "content": f"username:{username}\tuser's messages:{user_messages}"},
             ],
             stream=False
         )
