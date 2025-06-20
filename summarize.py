@@ -5,10 +5,23 @@ from config import HK_TIMEZONE, logger, GOLDEN_PROMPTS, SUMMARIZE_USER_PROMPTS
 from db import DatabaseOperations
 from ai import get_ai_summary
 
+async def check_bot_admin(chat_id, context):
+    """Check if the bot is an admin in the group"""
+    try:
+        bot_member = await context.bot.get_chat_member(chat_id=chat_id, user_id=context.bot.id)
+        return bot_member.status in ["administrator", "creator"]
+    except Exception as e:
+        logger.error(f"Failed to check bot admin status: {e}")
+        return False
 
 async def summarize_golden_quote_king(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.message.chat_id
     logger.info(f"Starting golden quote king selection in chat {chat_id}")
+
+    # Check if bot is admin
+    if not await check_bot_admin(chat_id, context):
+        await update.message.reply_text("我唔係群組管理員，無權限執行 /golden_quote_king 指令！😅 請搵個管理員幫我升級先！")
+        return
 
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -25,7 +38,7 @@ async def summarize_golden_quote_king(update: Update, context: ContextTypes.DEFA
         logger.info(f"No messages found for golden quote king in chat {chat_id}")
         return
 
-    # 將訊息按用戶分組
+    # Group messages by user
     user_messages = {}
     for row in rows:
         user = row[0]
@@ -33,7 +46,7 @@ async def summarize_golden_quote_king(update: Update, context: ContextTypes.DEFA
             user_messages[user] = []
         user_messages[user].append(row[1])
 
-    # 準備 AI 分析嘅文本
+    # Prepare text for AI analysis
     analysis_text = "\n\n".join([f"{user}:\n" + "\n".join(msgs) for user, msgs in user_messages.items()])
 
     golden_prompt = f"{";".join(GOLDEN_PROMPTS)}\n\n以下係今日嘅對話:\n{analysis_text}"
@@ -51,10 +64,14 @@ async def summarize_golden_quote_king(update: Update, context: ContextTypes.DEFA
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
 
-
 async def summarize_in_range(update: Update, start_time: datetime, end_time: datetime, period_name: str) -> None:
     chat_id = update.message.chat_id
     logger.info(f"Starting summarization for {period_name} in chat {chat_id}")
+
+    # Check if bot is admin
+    if not await check_bot_admin(chat_id, context):
+        await update.message.reply_text(f"我唔係群組管理員，無權限執行 /summarize 指令！😅 請搵個管理員幫我升級先！")
+        return
 
     db_ops = DatabaseOperations()
     rows = db_ops.get_messages_in_range(chat_id, start_time, end_time)
@@ -84,11 +101,15 @@ async def summarize_in_range(update: Update, start_time: datetime, end_time: dat
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
 
-
 async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.message.chat_id
     message = update.message
     logger.info(f"Starting user summarization in chat {chat_id} with command: {message.text}")
+
+    # Check if bot is admin
+    if not await check_bot_admin(chat_id, context):
+        await update.message.reply_text("我唔係群組管理員，無權限執行 /summarize_user 指令！😅 請搵個管理員幫我升級先！")
+        return
 
     # Check if the message is a reply to another message
     if not message.reply_to_message:
@@ -132,14 +153,22 @@ async def summarize_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     else:
         await waiting_message.edit_text('系統想方加(出錯)，好對唔住')
 
-
 async def summarize_day(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Check if command is used in group or supergroup
+    if update.message.chat.type not in ["group", "supergroup"]:
+        await update.message.reply_text("呢個指令只可以喺群組用！😅")
+        return
+
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     await summarize_in_range(update, start_of_day, now, "全日")
 
-
 async def summarize_morning(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Check if command is used in group or supergroup
+    if update.message.chat.type not in ["group", "supergroup"]:
+        await update.message.reply_text("呢個指令只可以喺群組用！😅")
+        return
+
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     morning_start = start_of_day.replace(hour=6, minute=0)
@@ -148,8 +177,12 @@ async def summarize_morning(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         morning_end = now
     await summarize_in_range(update, morning_start, morning_end, "今日早晨 (06:00-12:00)")
 
-
 async def summarize_afternoon(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Check if command is used in group or supergroup
+    if update.message.chat.type not in ["group", "supergroup"]:
+        await update.message.reply_text("呢個指令只可以喺群組用！😅")
+        return
+
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     afternoon_start = start_of_day.replace(hour=12, minute=0)
@@ -158,8 +191,12 @@ async def summarize_afternoon(update: Update, context: ContextTypes.DEFAULT_TYPE
         afternoon_end = now
     await summarize_in_range(update, afternoon_start, afternoon_end, "今日下午 (12:00-18:00)")
 
-
 async def summarize_night(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Check if command is used in group or supergroup
+    if update.message.chat.type not in ["group", "supergroup"]:
+        await update.message.reply_text("呢個指令只可以喺群組用！😅")
+        return
+
     now = datetime.now(HK_TIMEZONE)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     night_start = start_of_day.replace(hour=18, minute=0)
@@ -168,14 +205,22 @@ async def summarize_night(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         night_end = now
     await summarize_in_range(update, night_start, night_end, "今晚 (18:00-05:59)")
 
-
 async def summarize_last_hour(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Check if command is used in group or supergroup
+    if update.message.chat.type not in ["group", "supergroup"]:
+        await update.message.reply_text("呢個指令只可以喺群組用！😅")
+        return
+
     now = datetime.now(HK_TIMEZONE)
     last_hour_start = now - timedelta(hours=1)
     await summarize_in_range(update, last_hour_start, now, "過去一小時")
 
-
 async def summarize_last_3_hours(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # Check if command is used in group or supergroup
+    if update.message.chat.type not in ["group", "supergroup"]:
+        await update.message.reply_text("呢個指令只可以喺群組用！😅")
+        return
+
     now = datetime.now(HK_TIMEZONE)
     last_3_hours_start = now - timedelta(hours=3)
     await summarize_in_range(update, last_3_hours_start, now, "過去三小時")
