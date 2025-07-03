@@ -10,7 +10,7 @@ from fuck import fuck_user
 from love import send_love_quote
 from ai import get_ai_apology
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 
 application = Application.builder().token(TOKEN).build()
 
