@@ -14,6 +14,48 @@ from datetime import datetime
 
 application = Application.builder().token(TOKEN).build()
 
+async def countdown_to_work(update, context):
+    chat_id = update.message.chat_id
+    logger.info(f"Starting countdown to work for chat {chat_id}")
+
+    # Define Hong Kong time zone
+    hk_tz = pytz.timezone('Asia/Hong_Kong')
+
+    # Get current time in Hong Kong
+    now = datetime.now(hk_tz)
+
+    # Get day of the week (0 = Monday, 6 = Sunday)
+    weekday = now.weekday()
+
+    # Check if it's within working hours (Monday-Friday, 9 AM to 6 PM)
+    current_hour = now.hour
+    if weekday < 5 and 9 <= current_hour < 18:  # Monday to Friday, 9 AM to 6 PM
+        await update.message.reply_text("返緊工喇柒頭...😓")
+        return
+
+    # Calculate time to next workday start (9 AM)
+    if weekday >= 5:  # Saturday or Sunday
+        # Next Monday 9 AM
+        days_until_monday = (7 - weekday) % 7
+        target = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=days_until_monday)
+        if days_until_monday == 0:  # If Sunday, add one day to get to Monday
+            target += timedelta(days=1)
+    else:  # Monday to Friday, outside working hours
+        if current_hour >= 18:  # After 6 PM, target is next day 9 AM
+            target = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=1)
+            # If next day is Saturday, skip to Monday
+            if (now + timedelta(days=1)).weekday() >= 5:
+                target += timedelta(days=2 if (now + timedelta(days=1)).weekday() == 5 else 1)
+        else:  # Before 9 AM
+            target = now.replace(hour=9, minute=0, second=0, microsecond=0)
+
+    # Calculate time difference in minutes
+    time_left = target - now
+    total_minutes = (time_left.days * 24 * 60) + (time_left.seconds // 60)
+
+    # Format the countdown message
+    countdown_message = f"距離返工時間仲有 {total_minutes:,} 分鐘！😴"
+    await update.message.reply_text(countdown_message)
 
 async def countdown(update, context):
     chat_id = update.message.chat_id
@@ -88,6 +130,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("apologize", apologize))
     application.add_handler(CommandHandler("love", send_love_quote))
     application.add_handler(CommandHandler("countdown", countdown))
+    application.add_handler(CommandHandler("countdown_to_work", countdown_to_work))
     application.add_handler(CommandHandler("diu", fuck_user))
 
     print("Starting bot...")
