@@ -1,8 +1,7 @@
 from telegram.ext import Application, MessageHandler, filters, CommandHandler
-
 from compliment import compliment_user
 from config import TOKEN, logger
-from database import DatabasePool, init_db, log_message  # Import DatabasePool instead of init_db_pool
+from database import DatabasePool, init_db, log_message
 from summarize import (summarize_day, summarize_morning, summarize_afternoon,
                        summarize_night, summarize_last_hour, summarize_last_3_hours,
                        summarize_user, summarize_golden_quote_king)
@@ -13,6 +12,44 @@ import pytz
 from datetime import datetime, timedelta
 
 application = Application.builder().token(TOKEN).build()
+
+async def countdown_to_retirement(update, context):
+    chat_id = update.message.chat_id
+    logger.info(f"Starting countdown to retirement for chat {chat_id}")
+
+    # Check if year parameter is provided
+    if not context.args:
+        await update.message.reply_text("請提供退休年份，例如：/countdown_to_retirement 2050")
+        return
+
+    try:
+        retirement_year = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("年份必須係數字，例如：/countdown_to_retirement 2050")
+        return
+
+    # Define Hong Kong time zone
+    hk_tz = pytz.timezone('Asia/Hong_Kong')
+
+    # Get current time in Hong Kong
+    now = datetime.now(hk_tz)
+    current_year = now.year
+
+    # Validate retirement year
+    if retirement_year <= current_year:
+        await update.message.reply_text(f"退休年份必須大過而家嘅年份 ({current_year})！")
+        return
+
+    # Set target to January 1st of the retirement year
+    target = datetime(retirement_year, 1, 1, 0, 0, 0, tzinfo=hk_tz)
+
+    # Calculate time difference
+    time_left = target - now
+    total_minutes = (time_left.days * 24 * 60) + (time_left.seconds // 60)
+
+    # Format the countdown message
+    countdown_message = f"距離退休仲有 {total_minutes:,} 分鐘！🌴 繼續努力呀！"
+    await update.message.reply_text(countdown_message)
 
 async def countdown_to_work(update, context):
     chat_id = update.message.chat_id
@@ -131,6 +168,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("love", send_love_quote))
     application.add_handler(CommandHandler("countdown", countdown))
     application.add_handler(CommandHandler("countdown_to_work", countdown_to_work))
+    application.add_handler(CommandHandler("countdown_to_retirement", countdown_to_retirement))
     application.add_handler(CommandHandler("diu", fuck_user))
 
     print("Starting bot...")
