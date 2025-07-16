@@ -49,8 +49,12 @@ async def countdown_to_retirement(update, context):
     total_minutes += 1
 
     # Format the countdown message
+    waiting_message = await update.message.reply_text("計緊仲有幾耐就退休...")
     countdown_message = get_ai_countdown(f"距離退休仲有 {total_minutes:,} 分鐘")
-    await update.message.reply_text(countdown_message)
+    if countdown_message:
+        await waiting_message.edit_text(countdown_message)
+    else:
+        await waiting_message.edit_text('計唔L到，叫五仁哥人手計🙇‍♂️')
 
 async def countdown_to_work(update, context):
     chat_id = update.message.chat_id
@@ -92,13 +96,17 @@ async def countdown_to_work(update, context):
     total_minutes = (time_left.days * 24 * 60) + (time_left.seconds // 60)
     total_minutes += 1
 
-    # Format the countdown message
+    waiting_message = await update.message.reply_text("計緊仲有幾耐就返工...")
     countdown_message = get_ai_countdown(f"距離返工時間仲有 {total_minutes:,} 分鐘")
-    await update.message.reply_text(countdown_message)
+    if countdown_message:
+        await waiting_message.edit_text(countdown_message)
+    else:
+        await waiting_message.edit_text('計唔L到，叫五仁哥人手計🙇‍♂️')
 
 async def countdown(update, context):
     chat_id = update.message.chat_id
     logger.info(f"Starting countdown for chat {chat_id}")
+    
     
     # Define Hong Kong time zone
     hk_tz = pytz.timezone('Asia/Hong_Kong')
@@ -127,9 +135,12 @@ async def countdown(update, context):
     if current_hour < 9 or current_hour >= 18:
         await update.message.reply_text("放左工了！🎉")
         return
-
+    waiting_message = await update.message.reply_text("計緊仲有幾耐先收工...")
     countdown_message = get_ai_countdown(f"仲有 {total_minutes} 分鐘就放工")
-    await update.message.reply_text(countdown_message)
+    if countdown_message:
+        await waiting_message.edit_text(countdown_message)
+    else:
+        await waiting_message.edit_text('計唔L到，叫五仁哥人手計🙇‍♂️')
 
 
 async def apologize(update, context):
