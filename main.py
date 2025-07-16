@@ -9,7 +9,7 @@ from fuck import fuck_user
 from love import send_love_quote
 from ai import get_ai_apology, get_ai_countdown
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 
 application = Application.builder().token(TOKEN).build()
 
@@ -169,7 +169,6 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("apologize", apologize))
     application.add_handler(CommandHandler("love", send_love_quote))
     application.add_handler(CommandHandler("countdown", countdown))
-    application.add_handler(CommandHandler("countdown_to_work", countdown_to_work))
     application.add_handler(CommandHandler("diu", fuck_user))
 
     print("Starting bot...")
