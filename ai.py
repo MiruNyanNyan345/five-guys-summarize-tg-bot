@@ -1,6 +1,7 @@
 from openai import OpenAI
-from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS, LIHKG_BASE_PROMPT, LOVE_SYSTEM_PROMPT
-
+from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS, AI_GENERATE_BASE_PROMPT, LOVE_SYSTEM_PROMPT
+import pytz
+from datetime import datetime
 
 def get_ai_summary(user_prompt: str, system_prompt="") -> str:
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
@@ -63,3 +64,43 @@ def get_ai_love_quote(username: str, user_messages: str) -> str:
     except Exception as e:
         print(f"Error in get_love_quote: {e}")
         return '哎呀，情話生成失敗，愛你唔使講😜'
+
+def get_ai_countdown() -> str:
+    # Define Hong Kong time zone
+    hk_tz = pytz.timezone('Asia/Hong_Kong')
+
+    # Get current time in Hong Kong
+    now = datetime.now(hk_tz)
+
+    # Get day of the week (0 = Monday, 6 = Sunday)
+    weekday = now.weekday()
+
+    # Set target time to 6 PM today in Hong Kong
+    target = now.replace(hour=18, minute=0, second=0, microsecond=0)
+
+    # Calculate time difference in minutes
+    time_left = target - now
+    total_minutes = time_left.seconds // 60
+    total_minutes += 1
+
+    # AI generate
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": AI_GENERATE_BASE_PROMPT
+                },
+                {
+                    "role": "user",
+                    "content": f"再修飾以下句子，使內容變得有趣: '仲有 {total_minutes} 分鐘就放工'"
+                },
+            ],
+            stream=False
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"Error in get_ai_summary: {e}")
+        return f"仲有{total_minutes}分鐘就放工！頂住！'"

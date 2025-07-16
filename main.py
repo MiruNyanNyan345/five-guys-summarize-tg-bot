@@ -1,14 +1,14 @@
 from telegram.ext import Application, MessageHandler, filters, CommandHandler
 
 from compliment import compliment_user
-from config import TOKEN, logger
+from config import TOKEN, logger, AI_GENERATE_BASE_PROMPT
 from database import DatabasePool, init_db, log_message  # Import DatabasePool instead of init_db_pool
 from summarize import (summarize_day, summarize_morning, summarize_afternoon,
                        summarize_night, summarize_last_hour, summarize_last_3_hours,
                        summarize_user, summarize_golden_quote_king)
 from fuck import fuck_user
 from love import send_love_quote
-from ai import get_ai_apology
+from ai import get_ai_apology, get_ai_countdown
 import pytz
 from datetime import datetime
 
@@ -19,14 +19,6 @@ async def countdown(update, context):
     chat_id = update.message.chat_id
     logger.info(f"Starting countdown for chat {chat_id}")
 
-    # Define Hong Kong time zone
-    hk_tz = pytz.timezone('Asia/Hong_Kong')
-
-    # Get current time in Hong Kong
-    now = datetime.now(hk_tz)
-
-    # Get day of the week (0 = Monday, 6 = Sunday)
-    weekday = now.weekday()
 
     # Check if it's Saturday or Sunday
     if weekday >= 5:  # Saturday (5) or Sunday (6)
@@ -39,16 +31,8 @@ async def countdown(update, context):
         await update.message.reply_text("放左工了！🎉")
         return
 
-    # Set target time to 6 PM today in Hong Kong
-    target = now.replace(hour=18, minute=0, second=0, microsecond=0)
-
-    # Calculate time difference in minutes
-    time_left = target - now
-    total_minutes = time_left.seconds // 60
-
-    # Format the countdown message
-    countdown_message = f"仲有 {total_minutes} 分鐘 就放工！💼 捱多陣啦！"
-    await update.message.reply_text(countdown_message)
+    message = get_ai_countdown()
+    await update.message.reply_text(message)
 
 
 async def apologize(update, context):

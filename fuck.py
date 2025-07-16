@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from config import logger, HK_TIMEZONE, LIHKG_BASE_PROMPT
+from config import logger, HK_TIMEZONE, AI_GENERATE_BASE_PROMPT
 from ai import get_ai_summary
 from datetime import datetime
 
@@ -27,7 +27,7 @@ async def fuck_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
     waiting_message = await message.reply_text(f"幫你諗緊點Diu7 {target_username}… ⏳")
-    punishment = get_ai_summary(user_prompt, LIHKG_BASE_PROMPT)
+    punishment = get_ai_summary(user_prompt, AI_GENERATE_BASE_PROMPT)
     logger.info(f"Generated punishment for {target_username} in chat {chat_id}: {punishment}")
 
     now = datetime.now(HK_TIMEZONE)
