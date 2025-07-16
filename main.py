@@ -180,6 +180,8 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("apologize", apologize))
     application.add_handler(CommandHandler("love", send_love_quote))
     application.add_handler(CommandHandler("countdown", countdown))
+    application.add_handler(CommandHandler("countdown_to_work", countdown_to_work))
+    application.add_handler(CommandHandler("countdown_to_retirement", countdown_to_retirement))
     application.add_handler(CommandHandler("diu", fuck_user))
 
     print("Starting bot...")
