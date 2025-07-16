@@ -46,9 +46,10 @@ async def countdown_to_retirement(update, context):
     # Calculate time difference
     time_left = target - now
     total_minutes = (time_left.days * 24 * 60) + (time_left.seconds // 60)
+    total_minutes += 1
 
     # Format the countdown message
-    countdown_message = f"距離退休仲有 {total_minutes:,} 分鐘！🌴 繼續努力呀！"
+    countdown_message = get_ai_countdown(f"距離退休仲有 {total_minutes:,} 分鐘")
     await update.message.reply_text(countdown_message)
 
 async def countdown_to_work(update, context):
@@ -89,15 +90,32 @@ async def countdown_to_work(update, context):
     # Calculate time difference in minutes
     time_left = target - now
     total_minutes = (time_left.days * 24 * 60) + (time_left.seconds // 60)
+    total_minutes += 1
 
     # Format the countdown message
-    countdown_message = f"距離返工時間仲有 {total_minutes:,} 分鐘！😴"
+    countdown_message = get_ai_countdown(f"距離返工時間仲有 {total_minutes:,} 分鐘")
     await update.message.reply_text(countdown_message)
 
 async def countdown(update, context):
     chat_id = update.message.chat_id
     logger.info(f"Starting countdown for chat {chat_id}")
+    
+    # Define Hong Kong time zone
+    hk_tz = pytz.timezone('Asia/Hong_Kong')
 
+    # Get current time in Hong Kong
+    now = datetime.now(hk_tz)
+
+    # Get day of the week (0 = Monday, 6 = Sunday)
+    weekday = now.weekday()
+
+    # Set target time to 6 PM today in Hong Kong
+    target = now.replace(hour=18, minute=0, second=0, microsecond=0)
+
+    # Calculate time difference in minutes
+    time_left = target - now
+    total_minutes = time_left.seconds // 60
+    total_minutes += 1
 
     # Check if it's Saturday or Sunday
     if weekday >= 5:  # Saturday (5) or Sunday (6)
@@ -110,8 +128,8 @@ async def countdown(update, context):
         await update.message.reply_text("放左工了！🎉")
         return
 
-    message = get_ai_countdown()
-    await update.message.reply_text(message)
+    countdown_message = get_ai_countdown(f"仲有 {total_minutes} 分鐘就放工")
+    await update.message.reply_text(countdown_message)
 
 
 async def apologize(update, context):
