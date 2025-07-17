@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import ContextTypes
-from config import HK_TIMEZONE, logger, GOLDEN_PROMPTS, SUMMARIZE_USER_PROMPTS, AI_GENERATE_BASE_PROMPT
+from config import HK_TIMEZONE, logger, GOLDEN_PROMPTS, SUMMARIZE_USER_PROMPTS, AI_GENERATE_BASE_PROMPT, SUMMARIZE_PROMPTS
 from db import DatabaseOperations
 from ai import get_ai_summary
 
