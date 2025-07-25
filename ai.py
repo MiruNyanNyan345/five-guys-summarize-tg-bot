@@ -1,5 +1,5 @@
 from openai import OpenAI
-from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS, AI_GENERATE_BASE_PROMPT, LOVE_SYSTEM_PROMPT
+from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS, AI_GENERATE_BASE_PROMPT, LOVE_SYSTEM_PROMPT, AI_ANSWER_SYSTEM_PROMPT
 import pytz
 from datetime import datetime
 
@@ -9,6 +9,10 @@ def get_ai_answer(user_prompt: str) -> str:
         response = client.chat.completions.create(
             model=MODEL,
             messages=[
+                {
+                    "role": "system",
+                    "content": AI_ANSWER_SYSTEM_PROMPT 
+                },
                 {"role": "user",
                     "content": user_prompt
                 },
