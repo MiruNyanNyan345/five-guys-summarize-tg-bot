@@ -7,7 +7,7 @@ from summarize import (summarize_day, summarize_morning, summarize_afternoon,
                        summarize_user, summarize_golden_quote_king)
 from fuck import fuck_user
 from love import send_love_quote
-from ai import get_ai_apology, get_ai_countdown
+from ai import get_ai_apology, get_ai_countdown, get_ai_answer
 import pytz
 from datetime import datetime, timedelta
 
@@ -142,7 +142,6 @@ async def countdown(update, context):
     else:
         await waiting_message.edit_text('計唔L到，叫五仁哥人手計🙇‍♂️')
 
-
 async def apologize(update, context):
     chat_id = update.message.chat_id
     print(f"Starting apology generation for chat {chat_id}")
@@ -156,6 +155,35 @@ async def apologize(update, context):
     else:
         await waiting_message.edit_text('哎呀，道歉失敗，唔好打我🙏')
 
+async def answer(update, context):
+    chat_id = update.message.chat_id
+    message = update.message
+    logger.info(f"Starting answer command in chat {chat_id} with command: {message.text}")
+
+    # Check if context args are provided
+    if not context.args:
+        await message.reply_text("請提供問題，例如：/answer 你點解咁叻？")
+        return
+
+    # Join context args to form the target message
+    target_message = ' '.join(context.args)
+
+    # Prepare the prompt for AI-generated answer, focusing on the replied message
+    user_prompt = (
+        f"解答以下提問：'{target_message}'"
+    )
+
+    waiting_message = await message.reply_text(f"幫你諗緊… ⏳")
+    answer = get_ai_answer(user_prompt)
+    logger.info(f"Generated answer for chat {chat_id}: {answer}")
+
+    if answer and answer != '系統想方加(出錯)，好對唔住':
+        await waiting_message.edit_text(
+            f"🤖{answer}"
+        )
+    else:
+        await waiting_message.edit_text('無氣答，唔好打我🙏')
+    
 
 if __name__ == "__main__":
     try:
@@ -183,6 +211,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("countdown_to_work", countdown_to_work))
     application.add_handler(CommandHandler("countdown_to_retirement", countdown_to_retirement))
     application.add_handler(CommandHandler("diu", fuck_user))
+    application.add_handler(CommandHandler("answer", answer))
 
     print("Starting bot...")
     application.run_polling()

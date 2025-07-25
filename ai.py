@@ -3,6 +3,23 @@ from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS, AI_GENERATE_BASE
 import pytz
 from datetime import datetime
 
+def get_ai_answer(user_prompt: str) -> str:
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "user",
+                    "content": user_prompt
+                },
+            ],
+            stream=False
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"Error in get_ai_answer: {e}")
+        return '系統想方加(出錯)，好對唔住'    
+
 def get_ai_summary(user_prompt: str, system_prompt="") -> str:
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     try:
