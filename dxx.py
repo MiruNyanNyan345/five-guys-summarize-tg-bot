@@ -4,7 +4,7 @@ from config import logger, HK_TIMEZONE, AI_GENERATE_BASE_PROMPT
 from ai import get_ai_summary
 from datetime import datetime
 
-async def fuck_user(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def diu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.message.chat_id
     message = update.message
     logger.info(f"Starting fuck command in chat {chat_id} with command: {message.text}")

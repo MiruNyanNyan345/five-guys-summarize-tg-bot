@@ -5,7 +5,7 @@ from database import DatabasePool, init_db, log_message  # Import DatabasePool i
 from summarize import (summarize_day, summarize_morning, summarize_afternoon,
                        summarize_night, summarize_last_hour, summarize_last_3_hours,
                        summarize_user, summarize_golden_quote_king)
-from fuck import fuck_user
+from dxx import diu
 from love import send_love_quote
 from ai import get_ai_apology, get_ai_countdown, get_ai_answer
 import pytz
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("countdown", countdown))
     application.add_handler(CommandHandler("countdown_to_work", countdown_to_work))
     application.add_handler(CommandHandler("countdown_to_retirement", countdown_to_retirement))
-    application.add_handler(CommandHandler("diu", fuck_user))
+    application.add_handler(CommandHandler("diu", diu))
     application.add_handler(CommandHandler("answer", answer))
 
     print("Starting bot...")
