@@ -23,7 +23,10 @@ async def diu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # Prepare the prompt for AI-generated punishment, focusing on the replied message
     user_prompt = (
-        f"針對{target_username}嘅以下訊息：'{target_message}'，去屌{target_user}"
+        f"""
+        針對{target_username}嘅以下訊息：'{target_message}'
+        組織一句句子去屌{target_user}。
+        """
     )
 
     waiting_message = await message.reply_text(f"幫你諗緊點Diu7 {target_username}… ⏳")

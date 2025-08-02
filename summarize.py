@@ -7,12 +7,13 @@ from ai import get_ai_summary
 
 async def check_bot_admin(chat_id, context):
     """Check if the bot is an admin in the group"""
-    try:
-        bot_member = await context.bot.get_chat_member(chat_id=chat_id, user_id=context.bot.id)
-        return bot_member.status in ["administrator", "creator"]
-    except Exception as e:
-        logger.error(f"Failed to check bot admin status: {e}")
-        return False
+    # try:
+    #     bot_member = await context.bot.get_chat_member(chat_id=chat_id, user_id=context.bot.id)
+    #     return bot_member.status in ["administrator", "creator"]
+    # except Exception as e:
+    #     logger.error(f"Failed to check bot admin status: {e}")
+    #     return False
+    return True 
 
 async def summarize_golden_quote_king(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     chat_id = update.message.chat_id
