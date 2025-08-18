@@ -26,6 +26,10 @@ async def diu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         f"""
         針對{target_username}嘅以下訊息：'{target_message}'
         組織一句句子去屌{target_user}。
+        
+        #禁止事項#
+        - 不用寫註解
+        - 不用解釋手成結果
         """
     )
 
