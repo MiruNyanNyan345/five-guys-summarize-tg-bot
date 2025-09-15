@@ -1,17 +1,18 @@
 # ai.py
 
-import httpx
+import requests  # Use requests for synchronous HTTP calls
 import base64
-from openai import AsyncOpenAI
+from openai import OpenAI  # Use the synchronous OpenAI client
 from config import API_KEY, BASE_URL, MODEL, AI_GENERATE_BASE_PROMPT, LOVE_SYSTEM_PROMPT, AI_ANSWER_SYSTEM_PROMPT
 
 # --- CLIENT INITIALIZATION ---
-client = AsyncOpenAI(api_key=API_KEY, base_url=BASE_URL)
-http_client = httpx.AsyncClient()
+client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
-async def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str) -> str:
+
+# --- VISION FUNCTION (SYNCHRONOUS) ---
+def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str) -> str:
     """
-    Generates a response from the AI based on a text prompt and an image.
+    Generates a response from the AI based on a text prompt and an image using synchronous calls.
     It downloads the image, encodes it in Base64, and sends the data directly.
     Args:
         user_prompt: The text prompt related to the image.
@@ -21,16 +22,16 @@ async def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt
         The AI-generated text response as a string.
     """
     try:
-        # Step 1: Asynchronously download the image content from the URL
-        response = await http_client.get(image_url)
-        response.raise_for_status()  # Raise an exception for bad status codes (like 404)
+        # Step 1: Synchronously download the image content from the URL
+        response = requests.get(image_url)
+        response.raise_for_status()
         image_bytes = response.content
 
         # Step 2: Encode the downloaded image content into a Base64 string
         base64_image = base64.b64encode(image_bytes).decode('utf-8')
 
-        # Step 3: Call the AI API with the Base64 encoded image data
-        api_response = await client.chat.completions.create(
+        # Step 3: Call the AI API with the Base64 encoded image data (no await)
+        api_response = client.chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -40,7 +41,6 @@ async def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt
                         {"type": "text", "text": user_prompt},
                         {
                             "type": "image_url",
-                            # This is the required format for sending Base64 image data
                             "image_url": {
                                 "url": f"data:image/jpeg;base64,{base64_image}"
                             },
@@ -52,19 +52,22 @@ async def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt
             max_tokens=200
         )
         return api_response.choices[0].message.content
-    except httpx.HTTPStatusError as http_err:
+    except requests.exceptions.RequestException as http_err:
         print(f"HTTP error occurred while downloading image: {http_err}")
         return '下載唔到張圖，請再試一次'
     except Exception as e:
         print(f"Error in get_ai_vision_response: {e}")
         return '系統分析唔到張圖，好對唔住'
 
-async def get_ai_answer(user_prompt: str) -> str:
+
+# --- TEXT-ONLY FUNCTIONS (SYNCHRONOUS) ---
+
+def get_ai_answer(user_prompt: str) -> str:
     """
-    Generates a text-based answer from the AI using a specific system prompt for Q&A.
+    Generates a text-based answer from the AI.
     """
     try:
-        response = await client.chat.completions.create(
+        response = client.chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": AI_ANSWER_SYSTEM_PROMPT},
@@ -77,12 +80,12 @@ async def get_ai_answer(user_prompt: str) -> str:
         print(f"Error in get_ai_answer: {e}")
         return '系統想方加(出錯)，好對唔住'
 
-async def get_ai_summary(user_prompt: str, system_prompt="") -> str:
+def get_ai_summary(user_prompt: str, system_prompt="") -> str:
     """
     Generates a text-based summary or response from the AI.
     """
     try:
-        response = await client.chat.completions.create(
+        response = client.chat.completions.create(
             model=MODEL,
             messages=[
                 {
@@ -98,12 +101,12 @@ async def get_ai_summary(user_prompt: str, system_prompt="") -> str:
         print(f"Error in get_ai_summary: {e}")
         return '系統想方加(出錯)，好對唔住'
 
-async def get_ai_apology() -> str:
+def get_ai_apology() -> str:
     """
-    Generates a humorous, Hong Kong-style apology.
+    Generates a humorous apology.
     """
     try:
-        response = await client.chat.completions.create(
+        response = client.chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "user",
@@ -118,12 +121,12 @@ async def get_ai_apology() -> str:
         print(f"Error in get_ai_apology: {e}")
         return '哎呀，道歉失敗，唔好打我🙏'
 
-async def get_ai_love_quote(username: str, user_messages: str) -> str:
+def get_ai_love_quote(username: str, user_messages: str) -> str:
     """
-    Generates a cheesy, Hong Kong-style love quote for a specific user.
+    Generates a cheesy love quote.
     """
     try:
-        response = await client.chat.completions.create(
+        response = client.chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": LOVE_SYSTEM_PROMPT},
@@ -138,12 +141,12 @@ async def get_ai_love_quote(username: str, user_messages: str) -> str:
         print(f"Error in get_love_quote: {e}")
         return '哎呀，情話生成失敗，愛你唔使講😜'
 
-async def get_ai_countdown(user_prompt="") -> str:
+def get_ai_countdown(user_prompt="") -> str:
     """
     Generates a creative countdown message.
     """
     try:
-        response = await client.chat.completions.create(
+        response = client.chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": AI_GENERATE_BASE_PROMPT},
