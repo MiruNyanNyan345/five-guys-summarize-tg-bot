@@ -13,24 +13,24 @@ client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str) -> str:
     """
     Generates a response from the AI based on a text prompt and an image using synchronous calls.
-    It downloads the image, encodes it in Base64, and sends the data directly.
-    Args:
-        user_prompt: The text prompt related to the image.
-        image_url: The public URL of the image from Telegram.
-        system_prompt: The system message to guide the AI's behavior.
-    Returns:
-        The AI-generated text response as a string.
+    Includes logging and timeouts for debugging.
     """
+    logger.info("Starting get_ai_vision_response function.")
     try:
-        # Step 1: Synchronously download the image content from the URL
-        response = requests.get(image_url)
-        response.raise_for_status()
+        # Step 1: Download the image with a 15-second timeout
+        logger.info(f"Downloading image from URL: {image_url}")
+        response = requests.get(image_url, timeout=15)
+        response.raise_for_status()  # Raise an exception for bad status codes
         image_bytes = response.content
+        logger.info("Image downloaded successfully.")
 
-        # Step 2: Encode the downloaded image content into a Base64 string
+        # Step 2: Encode the image to Base64
+        logger.info("Encoding image to Base64.")
         base64_image = base64.b64encode(image_bytes).decode('utf-8')
+        logger.info("Image encoded successfully.")
 
-        # Step 3: Call the AI API with the Base64 encoded image data (no await)
+        # Step 3: Call the AI API (will use the 30-second timeout from the client)
+        logger.info("Calling OpenAI API for vision response.")
         api_response = client.chat.completions.create(
             model=MODEL,
             messages=[
@@ -51,12 +51,19 @@ def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str)
             stream=False,
             max_tokens=200
         )
+        logger.info("OpenAI API call successful.")
         return api_response.choices[0].message.content
+    except requests.exceptions.Timeout:
+        logger.error("Timeout occurred while downloading image.")
+        return '下載圖片超時，張相可能太大或者網絡有問題'
     except requests.exceptions.RequestException as http_err:
-        print(f"HTTP error occurred while downloading image: {http_err}")
+        logger.error(f"HTTP error occurred while downloading image: {http_err}")
         return '下載唔到張圖，請再試一次'
+    except APITimeoutError:
+        logger.error("OpenAI API call timed out.")
+        return 'AI諗太耐諗到瞓著咗，請再試一次'
     except Exception as e:
-        print(f"Error in get_ai_vision_response: {e}")
+        logger.error(f"An unexpected error occurred in get_ai_vision_response: {e}")
         return '系統分析唔到張圖，好對唔住'
 
 
