@@ -1,7 +1,41 @@
 from openai import OpenAI
+from openai import AsyncOpenAI 
 from config import API_KEY, BASE_URL, MODEL, SUMMARIZE_PROMPTS, AI_GENERATE_BASE_PROMPT, LOVE_SYSTEM_PROMPT, AI_ANSWER_SYSTEM_PROMPT
 import pytz
 from datetime import datetime
+
+async def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str) -> str:
+    client = AsyncOpenAI(api_key=API_KEY, base_url=BASE_URL)
+    try:
+        response = await client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": user_prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_url,
+                                "detail": "low"
+                            },
+                        },
+                    ],
+                }
+            ],
+            stream=False,
+            max_tokens=150
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"Error in get_ai_vision_response: {e}")
+        return '系統分析唔到張圖，好對唔住'
+        
 
 def get_ai_answer(user_prompt: str) -> str:
     client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
