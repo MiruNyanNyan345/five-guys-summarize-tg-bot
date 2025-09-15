@@ -13,24 +13,21 @@ client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str) -> str:
     """
     Generates a response from the AI based on a text prompt and an image using synchronous calls.
-    Includes logging and timeouts for debugging.
+    Includes enhanced logging to inspect the full API response.
     """
-    print("Starting get_ai_vision_response function.")
+    logger.info("Starting get_ai_vision_response function.")
     try:
-        # Step 1: Download the image with a 15-second timeout
-        print(f"Downloading image from URL: {image_url}")
+        logger.info(f"Downloading image from URL: {image_url}")
         response = requests.get(image_url, timeout=15)
-        response.raise_for_status()  # Raise an exception for bad status codes
+        response.raise_for_status()
         image_bytes = response.content
-        print("Image downloaded successfully.")
+        logger.info("Image downloaded successfully.")
 
-        # Step 2: Encode the image to Base64
-        print("Encoding image to Base64.")
+        logger.info("Encoding image to Base64.")
         base64_image = base64.b64encode(image_bytes).decode('utf-8')
-        print("Image encoded successfully.")
+        logger.info("Image encoded successfully.")
 
-        # Step 3: Call the AI API (will use the 30-second timeout from the client)
-        print("Calling OpenAI API for vision response.")
+        logger.info("Calling OpenAI API for vision response.")
         api_response = client.chat.completions.create(
             model=MODEL,
             messages=[
@@ -51,8 +48,20 @@ def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str)
             stream=False,
             max_tokens=200
         )
-        print("OpenAI API call successful.")
-        return api_response.choices[0].message.content
+        
+        # --- NEW DEBUGGING LINES ---
+        # Log the full, raw response object from the API to see its structure.
+        logger.info(f"Full API Response: {api_response}")
+        
+        # Check if the response is valid before trying to access its content.
+        if api_response.choices and api_response.choices[0].message:
+            logger.info("OpenAI API call successful, content found.")
+            return api_response.choices[0].message.content
+        else:
+            # This will now catch cases where the API returns 200 OK but an empty/filtered response.
+            logger.error("API call was successful but returned no content/choices.")
+            return "AI 成功回應，但內容係空嘅，可能係安全設定擋咗。"
+
     except requests.exceptions.Timeout:
         logger.error("Timeout occurred while downloading image.")
         return '下載圖片超時，張相可能太大或者網絡有問題'
@@ -64,11 +73,12 @@ def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str)
         return 'AI諗太耐諗到瞓著咗，請再試一次'
     except Exception as e:
         logger.error(f"An unexpected error occurred in get_ai_vision_response: {e}")
+        # Log the actual API response object if an error occurs during parsing
+        if 'api_response' in locals():
+            logger.error(f"API response at time of error: {locals().get('api_response')}")
         return '系統分析唔到張圖，好對唔住'
 
-
 # --- TEXT-ONLY FUNCTIONS (SYNCHRONOUS) ---
-
 def get_ai_answer(user_prompt: str) -> str:
     """
     Generates a text-based answer from the AI.
