@@ -44,7 +44,7 @@ async def compliment_user(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         waiting_message = await message.reply_text(f"睇緊 {target_username} 張靚相，度緊點讚… ⏳")
         # Call the new vision function
-        response_text = await get_ai_vision_response(vision_prompt, image_url, system_prompt)
+        response_text = get_ai_vision_response(vision_prompt, image_url, system_prompt)
 
     # --- TEXT HANDLING LOGIC ---
     # Fallback to text if no photo is present
@@ -57,7 +57,7 @@ async def compliment_user(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         )
         waiting_message = await message.reply_text(f"分析緊 ** {target_username} ** 講過嘅嘢… ⏳")
         # Call the standard summary/text function
-        response_text = await get_ai_summary(text_prompt, system_prompt)
+        response_text = get_ai_summary(text_prompt, system_prompt)
     else:
         await message.reply_text("請回覆一個有文字或者有圖片嘅訊息啦！")
         return
