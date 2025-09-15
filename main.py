@@ -196,11 +196,6 @@ if __name__ == "__main__":
 
     # Register handlers
     application.add_handler(MessageHandler(filters.Text() & ~filters.Command(), log_message))
-    # application.add_handler(CommandHandler("summarize_morning", summarize_morning))
-    # application.add_handler(CommandHandler("summarize_afternoon", summarize_afternoon))
-    # application.add_handler(CommandHandler("summarize_night", summarize_night))
-    # application.add_handler(CommandHandler("summarize_last_hour", summarize_last_hour))
-    # application.add_handler(CommandHandler("summarize_last_3_hours", summarize_last_3_hours))
     application.add_handler(CommandHandler("summarize", summarize_day))
     application.add_handler(CommandHandler("summarize_user", summarize_user))
     application.add_handler(CommandHandler("golden_quote_king", summarize_golden_quote_king))
@@ -211,7 +206,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("countdown_to_work", countdown_to_work))
     application.add_handler(CommandHandler("countdown_to_retirement", countdown_to_retirement))
     application.add_handler(CommandHandler("diu", diu))
-    application.add_handler(CommandHandler("answer", answer))
+    application.add_handler(CommandHandler("ask", answer))
 
     print("Starting bot...")
     application.run_polling()
