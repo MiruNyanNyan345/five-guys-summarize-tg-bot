@@ -45,8 +45,7 @@ def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str)
                     ],
                 }
             ],
-            stream=False,
-            max_tokens=200
+            stream=False
         )
         
         # --- NEW DEBUGGING LINES ---
