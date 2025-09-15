@@ -29,7 +29,7 @@ async def diu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # --- IMAGE HANDLING LOGIC ---
     # Check if the replied-to message contains a photo
     if message.reply_to_message.photo:
-        photo = message.reply_to_message.photo[-1]
+        photo = message.reply_to_message.photo[0]
         file = await context.bot.get_file(photo.file_id)
         image_url = file.file_path
 
