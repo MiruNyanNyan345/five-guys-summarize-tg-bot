@@ -15,22 +15,22 @@ def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str)
     Generates a response from the AI based on a text prompt and an image using synchronous calls.
     Includes logging and timeouts for debugging.
     """
-    logger.info("Starting get_ai_vision_response function.")
+    print("Starting get_ai_vision_response function.")
     try:
         # Step 1: Download the image with a 15-second timeout
-        logger.info(f"Downloading image from URL: {image_url}")
+        print(f"Downloading image from URL: {image_url}")
         response = requests.get(image_url, timeout=15)
         response.raise_for_status()  # Raise an exception for bad status codes
         image_bytes = response.content
-        logger.info("Image downloaded successfully.")
+        print("Image downloaded successfully.")
 
         # Step 2: Encode the image to Base64
-        logger.info("Encoding image to Base64.")
+        print("Encoding image to Base64.")
         base64_image = base64.b64encode(image_bytes).decode('utf-8')
-        logger.info("Image encoded successfully.")
+        print("Image encoded successfully.")
 
         # Step 3: Call the AI API (will use the 30-second timeout from the client)
-        logger.info("Calling OpenAI API for vision response.")
+        print("Calling OpenAI API for vision response.")
         api_response = client.chat.completions.create(
             model=MODEL,
             messages=[
@@ -51,7 +51,7 @@ def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str)
             stream=False,
             max_tokens=200
         )
-        logger.info("OpenAI API call successful.")
+        print("OpenAI API call successful.")
         return api_response.choices[0].message.content
     except requests.exceptions.Timeout:
         logger.error("Timeout occurred while downloading image.")
