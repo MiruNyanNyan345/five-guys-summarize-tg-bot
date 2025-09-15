@@ -37,7 +37,7 @@ async def diu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         vision_prompt = f"針對呢張相，組織一句啜核嘅句子去『Diu』 {target_username}。"
         waiting_message = await message.reply_text(f"幫你睇緊點樣Diu爆 {target_username} 張相… ⏳")
         # Call the vision function
-        response_text = await get_ai_vision_response(vision_prompt, image_url, system_prompt)
+        response_text = get_ai_vision_response(vision_prompt, image_url, system_prompt)
 
     # --- TEXT HANDLING LOGIC ---
     # Fallback to text if no photo is present
@@ -56,7 +56,7 @@ async def diu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
         waiting_message = await message.reply_text(f"幫你諗緊點Diu7 {target_username}… ⏳")
         # Call the standard text function
-        response_text = await get_ai_summary(text_prompt, system_prompt)
+        response_text = get_ai_summary(text_prompt, system_prompt)
     else:
         await message.reply_text("請回覆一個有文字或者有圖片嘅訊息啦！")
         return
