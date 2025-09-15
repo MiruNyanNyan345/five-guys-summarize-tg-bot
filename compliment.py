@@ -32,8 +32,8 @@ async def compliment_user(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     # --- IMAGE HANDLING LOGIC ---
     # Check if the replied-to message contains a photo
     if message.reply_to_message.photo:
-        # Get the highest resolution photo
-        photo = message.reply_to_message.photo[-1]
+        # Get the lowest resolution 
+        photo = message.reply_to_message.photo[0]
         # Get the file object from Telegram's servers
         file = await context.bot.get_file(photo.file_id)
         # The file_path is a temporary public URL to the image
