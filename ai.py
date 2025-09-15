@@ -3,7 +3,7 @@
 import requests  # Use requests for synchronous HTTP calls
 import base64
 from openai import OpenAI  # Use the synchronous OpenAI client
-from config import API_KEY, BASE_URL, MODEL, AI_GENERATE_BASE_PROMPT, LOVE_SYSTEM_PROMPT, AI_ANSWER_SYSTEM_PROMPT
+from config import API_KEY, BASE_URL, MODEL, AI_GENERATE_BASE_PROMPT, LOVE_SYSTEM_PROMPT, AI_ANSWER_SYSTEM_PROMPT, logger
 
 # --- CLIENT INITIALIZATION ---
 client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
