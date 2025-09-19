@@ -51,6 +51,7 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     # Construct conversation history, filtering out the current message to avoid duplication
     conversation_history = "\n".join([f"{row[0]}: {row[1]}" for row in rows if row[1] != message.text])
+    print(f"Debug: Conversation history:\n{conversation_history}")
 
     current_message_text = message.text
     if is_mention:
