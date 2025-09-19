@@ -207,11 +207,12 @@ if __name__ == "__main__":
         exit(1)
 
     # Register the AI chat handler for mentions and replies
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.Command.COMMAND, handle_chat))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.Command.COMMAND, log_message))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.Command(), handle_chat))
 
-    # Register handlers
+    #   Register the message logging handler for all text messages
     application.add_handler(MessageHandler(filters.Text() & ~filters.Command(), log_message))
+
+    # Register handlers for commands
     application.add_handler(CommandHandler("summarize", summarize_day))
     application.add_handler(CommandHandler("summarize_user", summarize_user))
     application.add_handler(CommandHandler("golden_quote_king", summarize_golden_quote_king))
