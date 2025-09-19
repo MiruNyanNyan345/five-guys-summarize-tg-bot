@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2 import pool
-from config import DB_URL, logger
+from config import DB_URL, logger, HK_TIMEZONE
+from datetime import datetime
 
 
 class DatabasePool:
@@ -87,3 +88,28 @@ async def log_message(update, context):
         finally:
             if conn:
                 db_pool.putconn(conn)
+
+
+async def log_bot_reply(chat_id: int, chat_title: str, text: str, bot_id: int, bot_name: str):
+    """Logs the bot's own replies."""
+    timestamp = datetime.now(HK_TIMEZONE)
+    db_pool = DatabasePool.get_pool()
+    conn = None
+    try:
+        conn = db_pool.getconn()
+        cursor = conn.cursor()
+
+        sql = "INSERT INTO messages (chat_id, user_name, user_id, text, timestamp, chat_title) VALUES (%s, %s, %s, %s, %s, %s)"
+        params = (chat_id, bot_name, bot_id, text, timestamp, chat_title)
+
+        # Log the SQL query to be executed (Bot Reply)
+        logger.info(f"Executing SQL (Bot Reply): {cursor.mogrify(sql, params).decode('utf-8')}")
+
+        cursor.execute(sql, params)
+        conn.commit()
+        logger.info(f"Bot reply saved to database for chat {chat_id} ({chat_title})")
+    except Exception as e:
+        logger.error(f"Failed to log bot reply to database: {e}")
+    finally:
+        if conn:
+            db_pool.putconn(conn)
