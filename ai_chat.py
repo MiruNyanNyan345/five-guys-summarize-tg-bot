@@ -5,11 +5,16 @@ from config import HK_TIMEZONE, logger, AI_CHAT_SYSTEM_PROMPT, AI_GENERATE_BASE_
 from db import DatabaseOperations
 from ai import get_ai_summary
 
+from database import log_message
+
 
 async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Handles AI chat functionality in group chats when the bot is mentioned or replied to.
     """
+
+    await log_message(update, context)  # Log the incoming message
+
     message = update.message
     if not message or not message.text:
         return
@@ -44,7 +49,8 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     db_ops = DatabaseOperations()
     rows = db_ops.get_messages_in_range(chat_id, start_time, now)
-    print(f"Debug: Start time: {start_time}, Now: {now}, Chat ID: {chat_id}, Rows fetched: {len(rows) if rows else 'None'}")
+    print(
+        f"Debug: Start time: {start_time}, Now: {now}, Chat ID: {chat_id}, Rows fetched: {len(rows) if rows else 'None'}")
 
     if rows is None:
         await message.reply_text("哎呀，讀取對話紀錄時出錯！請稍後再試。")
