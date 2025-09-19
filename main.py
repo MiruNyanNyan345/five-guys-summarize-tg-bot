@@ -18,7 +18,7 @@ application = Application.builder().token(TOKEN).build()
 async def donate(update, context):
     await update.message.reply_text(
         "支持我哋嘅開發，請喺呢度請杯咖啡 ☕： https://buymeacoffee.com/fiveguyshk",
-        disable_web_page_preview=True
+        disable_web_page_preview=False
     )
 
 
