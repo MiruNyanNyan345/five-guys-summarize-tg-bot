@@ -10,6 +10,7 @@ from love import send_love_quote
 from ai import get_ai_apology, get_ai_countdown, get_ai_answer
 import pytz
 from datetime import datetime, timedelta
+from ai_chat import handle_chat
 
 application = Application.builder().token(TOKEN).build()
 
@@ -204,6 +205,10 @@ if __name__ == "__main__":
         logger.error(f"Startup failed: {e}")
         print(f"Bot cannot start due to: {e}")
         exit(1)
+
+    # Register the AI chat handler for mentions and replies
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.Command.COMMAND, handle_chat))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.Command.COMMAND, log_message))
 
     # Register handlers
     application.add_handler(MessageHandler(filters.Text() & ~filters.Command(), log_message))
