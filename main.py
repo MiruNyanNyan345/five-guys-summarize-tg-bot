@@ -13,6 +13,14 @@ from datetime import datetime, timedelta
 
 application = Application.builder().token(TOKEN).build()
 
+
+async def donate(update, context):
+    await update.message.reply_text(
+        "支持我哋嘅開發，請喺呢度請杯咖啡 ☕： https://buymeacoffee.com/fiveguyshk",
+        disable_web_page_preview=True
+    )
+
+
 async def countdown_to_retirement(update, context):
     chat_id = update.message.chat_id
     logger.info(f"Starting countdown to retirement for chat {chat_id}")
@@ -55,6 +63,7 @@ async def countdown_to_retirement(update, context):
         await waiting_message.edit_text(countdown_message)
     else:
         await waiting_message.edit_text('計唔L到，叫五仁哥人手計🙇‍♂️')
+
 
 async def countdown_to_work(update, context):
     chat_id = update.message.chat_id
@@ -103,11 +112,11 @@ async def countdown_to_work(update, context):
     else:
         await waiting_message.edit_text('計唔L到，叫五仁哥人手計🙇‍♂️')
 
+
 async def countdown(update, context):
     chat_id = update.message.chat_id
     logger.info(f"Starting countdown for chat {chat_id}")
-    
-    
+
     # Define Hong Kong time zone
     hk_tz = pytz.timezone('Asia/Hong_Kong')
 
@@ -142,6 +151,7 @@ async def countdown(update, context):
     else:
         await waiting_message.edit_text('計唔L到，叫五仁哥人手計🙇‍♂️')
 
+
 async def apologize(update, context):
     chat_id = update.message.chat_id
     print(f"Starting apology generation for chat {chat_id}")
@@ -154,6 +164,7 @@ async def apologize(update, context):
         await waiting_message.edit_text(apology)
     else:
         await waiting_message.edit_text('哎呀，道歉失敗，唔好打我🙏')
+
 
 async def answer(update, context):
     chat_id = update.message.chat_id
@@ -183,7 +194,7 @@ async def answer(update, context):
         )
     else:
         await waiting_message.edit_text('無氣答，唔好打我🙏')
-    
+
 
 if __name__ == "__main__":
     try:
@@ -207,6 +218,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("countdown_to_retirement", countdown_to_retirement))
     application.add_handler(CommandHandler("diu", diu))
     application.add_handler(CommandHandler("ask", answer))
+    application.add_handler(CommandHandler("donate", donate))
 
     print("Starting bot...")
     application.run_polling()
