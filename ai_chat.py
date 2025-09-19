@@ -55,7 +55,6 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     """
 
     system_prompt = f"""
-    {AI_GENERATE_BASE_PROMPT}
     {AI_CHAT_SYSTEM_PROMPT}
     """
 
