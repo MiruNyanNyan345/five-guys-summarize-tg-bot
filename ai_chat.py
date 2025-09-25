@@ -5,7 +5,7 @@ from config import HK_TIMEZONE, logger, AI_CHAT_SYSTEM_PROMPT, AI_GENERATE_BASE_
 from db import DatabaseOperations
 from ai import get_ai_summary
 
-from database import log_message, log_bot_reply
+from database import log_message, log_bot_reply, check_daily_usage_limit, increment_daily_usage
 
 
 async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -28,6 +28,16 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     if not (is_reply_to_bot or is_mentioning_bot):
         return
+    
+    # Check daily usage limit (20 times per day per group)
+    can_use, current_usage = check_daily_usage_limit(message.chat_id, max_usage=20)
+    if not can_use:
+        await message.reply_text(
+            f"今日已經用咗 {current_usage} 次喇 Ching！😅 聽日再搵我傾偈啦～",
+            reply_to_message_id=message.message_id
+        )
+        return
+    
     logger.info(f"Bot is mentioned or replied to in chat {message.chat_id}. Triggering AI response.")
 
     now = datetime.now(HK_TIMEZONE)
@@ -63,7 +73,17 @@ async def handle_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     ai_response = get_ai_summary(user_prompt, system_prompt)
 
     if ai_response and '系統' not in ai_response:
-        sent_message = await waiting_message.edit_text(ai_response)
+        # Increment daily usage count first
+        increment_daily_usage(message.chat_id)
+        
+        # Get updated usage count for display
+        _, updated_usage = check_daily_usage_limit(message.chat_id, max_usage=20)
+        remaining_usage = 20 - updated_usage
+        
+        # Add usage info to the response
+        response_with_usage = f"{ai_response}\n\n💬 今日剩餘用量：{remaining_usage}/20"
+        
+        sent_message = await waiting_message.edit_text(response_with_usage)
 
         await log_bot_reply(
             chat_id=sent_message.chat_id,
