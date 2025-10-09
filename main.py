@@ -1,13 +1,24 @@
 from telegram.ext import Application, MessageHandler, filters, CommandHandler
 from compliment import compliment_user
 from config import TOKEN, logger, AI_GENERATE_BASE_PROMPT
-from database import DatabasePool, init_db, log_message  # Import DatabasePool instead of init_db_pool
-from summarize import (summarize_day, summarize_morning, summarize_afternoon,
-                       summarize_night, summarize_last_hour, summarize_last_3_hours,
-                       summarize_user, summarize_golden_quote_king)
+from database import (
+    DatabasePool,
+    init_db,
+    log_message,
+)  # Import DatabasePool instead of init_db_pool
+from summarize import (
+    summarize_day,
+    summarize_morning,
+    summarize_afternoon,
+    summarize_night,
+    summarize_last_hour,
+    summarize_last_3_hours,
+    summarize_user,
+    summarize_golden_quote_king,
+)
 from dxx import diu
 from love import send_love_quote
-from ai import get_ai_apology, get_ai_countdown, get_ai_answer
+from ai import get_ai_apology, get_ai_countdown, get_ai_answer, search_with_serper
 import pytz
 from datetime import datetime, timedelta
 from ai_chat import handle_chat
@@ -18,7 +29,7 @@ application = Application.builder().token(TOKEN).build()
 async def donate(update, context):
     await update.message.reply_text(
         "支持我哋嘅開發，請喺呢度請杯咖啡 ☕： https://buymeacoffee.com/fiveguyshk",
-        disable_web_page_preview=False
+        disable_web_page_preview=False,
     )
 
 
@@ -28,17 +39,21 @@ async def countdown_to_retirement(update, context):
 
     # Check if year parameter is provided
     if not context.args:
-        await update.message.reply_text("請提供退休年份，例如：/countdown_to_retirement 2050")
+        await update.message.reply_text(
+            "請提供退休年份，例如：/countdown_to_retirement 2050"
+        )
         return
 
     try:
         retirement_year = int(context.args[0])
     except ValueError:
-        await update.message.reply_text("年份必須係數字，例如：/countdown_to_retirement 2050")
+        await update.message.reply_text(
+            "年份必須係數字，例如：/countdown_to_retirement 2050"
+        )
         return
 
     # Define Hong Kong time zone
-    hk_tz = pytz.timezone('Asia/Hong_Kong')
+    hk_tz = pytz.timezone("Asia/Hong_Kong")
 
     # Get current time in Hong Kong
     now = datetime.now(hk_tz)
@@ -46,7 +61,9 @@ async def countdown_to_retirement(update, context):
 
     # Validate retirement year
     if retirement_year <= current_year:
-        await update.message.reply_text(f"退休年份必須大過而家嘅年份 ({current_year})！")
+        await update.message.reply_text(
+            f"退休年份必須大過而家嘅年份 ({current_year})！"
+        )
         return
 
     # Set target to January 1st of the retirement year
@@ -63,7 +80,7 @@ async def countdown_to_retirement(update, context):
     if countdown_message:
         await waiting_message.edit_text(countdown_message)
     else:
-        await waiting_message.edit_text('計唔L到，叫五仁哥人手計🙇‍♂️')
+        await waiting_message.edit_text("計唔L到，叫五仁哥人手計🙇‍♂️")
 
 
 async def countdown_to_work(update, context):
@@ -71,7 +88,7 @@ async def countdown_to_work(update, context):
     logger.info(f"Starting countdown to work for chat {chat_id}")
 
     # Define Hong Kong time zone
-    hk_tz = pytz.timezone('Asia/Hong_Kong')
+    hk_tz = pytz.timezone("Asia/Hong_Kong")
 
     # Get current time in Hong Kong
     now = datetime.now(hk_tz)
@@ -89,15 +106,21 @@ async def countdown_to_work(update, context):
     if weekday >= 5:  # Saturday or Sunday
         # Next Monday 9 AM
         days_until_monday = (7 - weekday) % 7
-        target = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=days_until_monday)
+        target = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(
+            days=days_until_monday
+        )
         if days_until_monday == 0:  # If Sunday, add one day to get to Monday
             target += timedelta(days=1)
     else:  # Monday to Friday, outside working hours
         if current_hour >= 18:  # After 6 PM, target is next day 9 AM
-            target = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=1)
+            target = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(
+                days=1
+            )
             # If next day is Saturday, skip to Monday
             if (now + timedelta(days=1)).weekday() >= 5:
-                target += timedelta(days=2 if (now + timedelta(days=1)).weekday() == 5 else 1)
+                target += timedelta(
+                    days=2 if (now + timedelta(days=1)).weekday() == 5 else 1
+                )
         else:  # Before 9 AM
             target = now.replace(hour=9, minute=0, second=0, microsecond=0)
 
@@ -111,7 +134,7 @@ async def countdown_to_work(update, context):
     if countdown_message:
         await waiting_message.edit_text(countdown_message)
     else:
-        await waiting_message.edit_text('計唔L到，叫五仁哥人手計🙇‍♂️')
+        await waiting_message.edit_text("計唔L到，叫五仁哥人手計🙇‍♂️")
 
 
 async def countdown(update, context):
@@ -119,7 +142,7 @@ async def countdown(update, context):
     logger.info(f"Starting countdown for chat {chat_id}")
 
     # Define Hong Kong time zone
-    hk_tz = pytz.timezone('Asia/Hong_Kong')
+    hk_tz = pytz.timezone("Asia/Hong_Kong")
 
     # Get current time in Hong Kong
     now = datetime.now(hk_tz)
@@ -150,7 +173,7 @@ async def countdown(update, context):
     if countdown_message:
         await waiting_message.edit_text(countdown_message)
     else:
-        await waiting_message.edit_text('計唔L到，叫五仁哥人手計🙇‍♂️')
+        await waiting_message.edit_text("計唔L到，叫五仁哥人手計🙇‍♂️")
 
 
 async def apologize(update, context):
@@ -161,40 +184,47 @@ async def apologize(update, context):
     apology = get_ai_apology()
     print(f"Generated apology for chat {chat_id}: {apology}")
 
-    if apology and apology != '哎呀，道歉失敗，唔好打我🙏':
+    if apology and apology != "哎呀，道歉失敗，唔好打我🙏":
         await waiting_message.edit_text(apology)
     else:
-        await waiting_message.edit_text('哎呀，道歉失敗，唔好打我🙏')
+        await waiting_message.edit_text("哎呀，道歉失敗，唔好打我🙏")
 
 
 async def answer(update, context):
     chat_id = update.message.chat_id
     message = update.message
-    logger.info(f"Starting answer command in chat {chat_id} with command: {message.text}")
+    logger.info(
+        f"Starting answer command in chat {chat_id} with command: {message.text}"
+    )
 
     # Check if context args are provided
     if not context.args:
-        await message.reply_text("請提供問題，例如：/answer 你點解咁叻？")
+        await message.reply_text("請提供問題，例如：/ask 你點解咁叻？")
         return
 
     # Join context args to form the target message
-    target_message = ' '.join(context.args)
+    target_message = " ".join(context.args)
 
-    # Prepare the prompt for AI-generated answer, focusing on the replied message
-    user_prompt = (
-        f"解答以下提問：'{target_message}'"
-    )
+    waiting_message = await message.reply_text(f"搵緊資料… 🔍")
 
-    waiting_message = await message.reply_text(f"幫你諗緊… ⏳")
-    answer = get_ai_answer(user_prompt)
+    # Search for information using Serper
+    search_results = search_with_serper(target_message)
+    logger.info(f"Search completed for chat {chat_id}")
+
+    # Update waiting message to show AI is processing
+    await waiting_message.edit_text(f"資料搵到喇，幫你分析緊… 🤖")
+
+    # Prepare the prompt for AI-generated answer with search results
+    user_prompt = target_message
+
+    # Get AI answer with search results
+    answer = get_ai_answer(user_prompt, search_results)
     logger.info(f"Generated answer for chat {chat_id}: {answer}")
 
-    if answer and answer != '系統想方加(出錯)，好對唔住':
-        await waiting_message.edit_text(
-            f"🤖{answer}"
-        )
+    if answer and answer != "系統想方加(出錯)，好對唔住":
+        await waiting_message.edit_text(answer)
     else:
-        await waiting_message.edit_text('無氣答，唔好打我🙏')
+        await waiting_message.edit_text("無氣答，唔好打我🙏")
 
 
 if __name__ == "__main__":
@@ -207,18 +237,24 @@ if __name__ == "__main__":
         exit(1)
 
     # Register the AI chat handler for mentions and replies
-    application.add_handler(MessageHandler(filters.Text() & ~filters.Command(), handle_chat))
+    application.add_handler(
+        MessageHandler(filters.Text() & ~filters.Command(), handle_chat)
+    )
 
     # Register handlers for commands
     application.add_handler(CommandHandler("summarize", summarize_day))
     application.add_handler(CommandHandler("summarize_user", summarize_user))
-    application.add_handler(CommandHandler("golden_quote_king", summarize_golden_quote_king))
+    application.add_handler(
+        CommandHandler("golden_quote_king", summarize_golden_quote_king)
+    )
     application.add_handler(CommandHandler("compliment", compliment_user))
     application.add_handler(CommandHandler("apologize", apologize))
     application.add_handler(CommandHandler("love", send_love_quote))
     application.add_handler(CommandHandler("countdown", countdown))
     application.add_handler(CommandHandler("countdown_to_work", countdown_to_work))
-    application.add_handler(CommandHandler("countdown_to_retirement", countdown_to_retirement))
+    application.add_handler(
+        CommandHandler("countdown_to_retirement", countdown_to_retirement)
+    )
     application.add_handler(CommandHandler("diu", diu))
     application.add_handler(CommandHandler("ask", answer))
     application.add_handler(CommandHandler("donate", donate))
