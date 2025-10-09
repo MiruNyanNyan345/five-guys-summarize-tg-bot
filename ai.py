@@ -29,7 +29,16 @@ def search_with_serper(query: str) -> str:
         logger.info(f"Searching with Serper: {query}")
 
         url = "https://google.serper.dev/search"
-        payload = json.dumps({"q": query, "num": 5})  # Get top 5 results
+        payload = json.dumps(
+            {
+                "q": query,
+                "num": 10,  # Get top 10 results
+                "location": "Hong Kong",  # Get results from Hong Kong
+                "gl": "hk",  # Get results from Hong Kong
+                "hl": "zh-tw",  # Get results in Chinese,
+                "tbs": "qdr:y",  # Get results from the last year
+            }
+        )
         headers = {"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"}
 
         response = requests.post(url, headers=headers, data=payload, timeout=10)
