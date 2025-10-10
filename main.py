@@ -205,11 +205,18 @@ async def answer(update, context):
     # Join context args to form the target message
     target_message = " ".join(context.args)
 
+    # Add current date context to help AI with time-aware reasoning
+    hk_tz = pytz.timezone("Asia/Hong_Kong")
+    current_date = datetime.now(hk_tz).strftime("%Y年%m月%d日")
+
+    # Enhanced prompt with date context
+    enhanced_message = f"[當前日期：{current_date}]\n用戶問題：{target_message}"
+
     waiting_message = await message.reply_text(f"諗緊點答你… 🤔")
 
     # Use AI with tool calling capability
     # AI will automatically decide if it needs to search for information
-    answer = get_ai_answer_with_tools(target_message)
+    answer = get_ai_answer_with_tools(enhanced_message)
     logger.info(f"Generated answer for chat {chat_id}: {answer[:100]}...")
 
     if answer and answer != "系統想方加(出錯)，好對唔住":

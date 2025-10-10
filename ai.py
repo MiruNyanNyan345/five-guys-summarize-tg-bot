@@ -178,7 +178,12 @@ SEARCH_TOOL = {
 不需要搜尋嘅情況：
 - 基本概念解釋（例如：點解天空係藍色）
 - 歷史事件、科學原理
-- 純粹意見、建議類問題""",
+- 純粹意見、建議類問題
+
+⚠️ 時間邏輯檢查：
+如果搜尋結果中嘅日期同用戶提供嘅當前日期有矛盾（例如：搜尋結果話「預計10月1日」但而家已經10月10日），你應該：
+1. 再次搜尋更新資訊（用更具體嘅關鍵詞 + qdr:d）
+2. 或者喺回答中說明呢個時間差異""",
         "parameters": {
             "type": "object",
             "properties": {
@@ -211,10 +216,15 @@ SEARCH_TOOL = {
 
 
 # --- TEXT-ONLY FUNCTIONS (SYNCHRONOUS) ---
-def get_ai_answer_with_tools(user_prompt: str) -> str:
+def get_ai_answer_with_tools(user_prompt: str, max_iterations: int = 3) -> str:
     """
     Generates a text-based answer from the AI with tool calling capability.
     AI can decide whether to search for information using Serper.
+    Supports iterative tool calling - AI can search, analyze results, and search again if needed.
+
+    Args:
+        user_prompt: The user's question
+        max_iterations: Maximum number of tool calling iterations (default: 3)
     """
     try:
         logger.info(f"Starting get_ai_answer_with_tools for prompt: {user_prompt}")
@@ -224,63 +234,71 @@ def get_ai_answer_with_tools(user_prompt: str) -> str:
             {"role": "user", "content": user_prompt},
         ]
 
-        # First API call - AI may decide to use tools
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=messages,
-            tools=[SEARCH_TOOL],
-            tool_choice="auto",  # Let AI decide
-            stream=False,
-        )
+        iteration = 0
+        while iteration < max_iterations:
+            iteration += 1
+            logger.info(f"Tool calling iteration {iteration}/{max_iterations}")
 
-        response_message = response.choices[0].message
-        tool_calls = response_message.tool_calls
-
-        # If AI wants to use tools
-        if tool_calls:
-            logger.info(f"AI requested {len(tool_calls)} tool call(s)")
-
-            # Add AI's response to messages
-            messages.append(response_message)
-
-            # Execute each tool call
-            for tool_call in tool_calls:
-                function_name = tool_call.function.name
-                function_args = json.loads(tool_call.function.arguments)
-
-                logger.info(f"Calling {function_name} with args: {function_args}")
-
-                if function_name == "search_with_serper":
-                    query = function_args.get("query")
-                    time_range = function_args.get("time_range", "qdr:y")
-
-                    # Call the search function
-                    search_results = search_with_serper(query, time_range)
-
-                    # Add function result to messages
-                    messages.append(
-                        {
-                            "tool_call_id": tool_call.id,
-                            "role": "tool",
-                            "name": function_name,
-                            "content": search_results,
-                        }
-                    )
-
-            # Second API call - AI processes the search results
-            logger.info("Getting final response after tool execution")
-            final_response = client.chat.completions.create(
+            # Call AI - may decide to use tools
+            response = client.chat.completions.create(
                 model=MODEL,
                 messages=messages,
+                tools=[SEARCH_TOOL],
+                tool_choice="auto",  # Let AI decide
                 stream=False,
             )
 
-            return final_response.choices[0].message.content
+            response_message = response.choices[0].message
+            tool_calls = response_message.tool_calls
 
-        else:
-            # AI decided not to use tools, return direct answer
-            logger.info("AI answered without using tools")
-            return response_message.content
+            # If AI wants to use tools
+            if tool_calls:
+                logger.info(
+                    f"AI requested {len(tool_calls)} tool call(s) in iteration {iteration}"
+                )
+
+                # Add AI's response to messages
+                messages.append(response_message)
+
+                # Execute each tool call
+                for tool_call in tool_calls:
+                    function_name = tool_call.function.name
+                    function_args = json.loads(tool_call.function.arguments)
+
+                    logger.info(f"Calling {function_name} with args: {function_args}")
+
+                    if function_name == "search_with_serper":
+                        query = function_args.get("query")
+                        time_range = function_args.get("time_range", "qdr:y")
+
+                        # Call the search function
+                        search_results = search_with_serper(query, time_range)
+
+                        # Add function result to messages
+                        messages.append(
+                            {
+                                "tool_call_id": tool_call.id,
+                                "role": "tool",
+                                "name": function_name,
+                                "content": search_results,
+                            }
+                        )
+
+                # Continue loop - AI will process results and may call tools again
+                continue
+
+            else:
+                # AI decided it has enough information, return final answer
+                logger.info(f"AI provided final answer after {iteration} iteration(s)")
+                return response_message.content
+
+        # Max iterations reached, return whatever AI has
+        logger.warning(f"Max iterations ({max_iterations}) reached")
+        return (
+            response_message.content
+            if response_message.content
+            else "系統處理超時，請簡化問題再試"
+        )
 
     except Exception as e:
         logger.error(f"Error in get_ai_answer_with_tools: {e}")
