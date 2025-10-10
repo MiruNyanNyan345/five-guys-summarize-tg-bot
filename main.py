@@ -18,7 +18,7 @@ from summarize import (
 )
 from dxx import diu
 from love import send_love_quote
-from ai import get_ai_apology, get_ai_countdown, get_ai_answer, search_with_serper
+from ai import get_ai_apology, get_ai_countdown, get_ai_answer_with_tools
 import pytz
 from datetime import datetime, timedelta
 from ai_chat import handle_chat
@@ -199,27 +199,18 @@ async def answer(update, context):
 
     # Check if context args are provided
     if not context.args:
-        await message.reply_text("請提供問題，例如：/ask 你點解咁叻？")
+        await message.reply_text("請提供問題，例如：/ask 今日香港天氣點？")
         return
 
     # Join context args to form the target message
     target_message = " ".join(context.args)
 
-    waiting_message = await message.reply_text(f"搵緊資料… 🔍")
+    waiting_message = await message.reply_text(f"諗緊點答你… 🤔")
 
-    # Search for information using Serper
-    search_results = search_with_serper(target_message)
-    logger.info(f"Search completed for chat {chat_id}")
-
-    # Update waiting message to show AI is processing
-    await waiting_message.edit_text(f"資料搵到喇，幫你分析緊… 🤖")
-
-    # Prepare the prompt for AI-generated answer with search results
-    user_prompt = target_message
-
-    # Get AI answer with search results
-    answer = get_ai_answer(user_prompt, search_results)
-    logger.info(f"Generated answer for chat {chat_id}: {answer}")
+    # Use AI with tool calling capability
+    # AI will automatically decide if it needs to search for information
+    answer = get_ai_answer_with_tools(target_message)
+    logger.info(f"Generated answer for chat {chat_id}: {answer[:100]}...")
 
     if answer and answer != "系統想方加(出錯)，好對唔住":
         await waiting_message.edit_text(answer)

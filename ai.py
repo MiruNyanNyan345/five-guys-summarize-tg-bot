@@ -20,13 +20,24 @@ client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
 
 # --- SERPER SEARCH FUNCTION ---
-def search_with_serper(query: str) -> str:
+def search_with_serper(query: str, time_range: str = "qdr:y") -> str:
     """
     Search for information using Serper.dev API.
-    Returns formatted search results as a string.
+
+    Args:
+        query: The search query
+        time_range: Time range for results. Options:
+            - "qdr:h" - past hour
+            - "qdr:d" - past 24 hours (for real-time info like weather, news)
+            - "qdr:w" - past week
+            - "qdr:m" - past month
+            - "qdr:y" - past year (default for general queries)
+
+    Returns:
+        Formatted search results as a string
     """
     try:
-        logger.info(f"Searching with Serper: {query}")
+        logger.info(f"Searching with Serper: {query} (time_range: {time_range})")
 
         url = "https://google.serper.dev/search"
         payload = json.dumps(
@@ -35,8 +46,8 @@ def search_with_serper(query: str) -> str:
                 "num": 10,  # Get top 10 results
                 "location": "Hong Kong",  # Get results from Hong Kong
                 "gl": "hk",  # Get results from Hong Kong
-                "hl": "zh-tw",  # Get results in Chinese,
-                "tbs": "qdr:y",  # Get results from the last year
+                "hl": "zh-tw",  # Get results in Chinese
+                "tbs": time_range,  # Time-based search
             }
         )
         headers = {"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"}
@@ -153,21 +164,153 @@ def get_ai_vision_response(user_prompt: str, image_url: str, system_prompt: str)
         return "系統分析唔到張圖，好對唔住"
 
 
+# --- FUNCTION TOOLS DEFINITION ---
+SEARCH_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "search_with_serper",
+        "description": """搜尋網上最新資料。當用戶問題涉及以下情況時應該使用此工具：
+- 實時資訊：天氣、新聞、股價、匯率等
+- 最新數據：當前價格、今日資訊、最近消息
+- 事實查證：需要驗證嘅資料、統計數字
+- 你知識庫以外嘅資訊：2024年後嘅資料、最新發展
+
+不需要搜尋嘅情況：
+- 基本概念解釋（例如：點解天空係藍色）
+- 歷史事件、科學原理
+- 純粹意見、建議類問題""",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "搜尋查詢字串，應該簡潔且準確。例如：'香港天氣 2025年10月10日'、'比特幣價格'、'香港最低工資 2024'",
+                },
+                "time_range": {
+                    "type": "string",
+                    "enum": ["qdr:h", "qdr:d", "qdr:w", "qdr:m", "qdr:y"],
+                    "description": """搜尋時間範圍：
+- 'qdr:h': 過去1小時（極度實時資訊）
+- 'qdr:d': 過去24小時（天氣、今日新聞、當日股價）
+- 'qdr:w': 過去1星期（最近新聞、短期趨勢）
+- 'qdr:m': 過去1個月（近期發展）
+- 'qdr:y': 過去1年（一般查詢，預設值）
+
+選擇建議：
+- 天氣、今日新聞 → qdr:d
+- 即時股價、匯率 → qdr:h 或 qdr:d
+- 最近政策、趨勢 → qdr:m
+- 一般知識、非時效性資訊 → qdr:y""",
+                    "default": "qdr:y",
+                },
+            },
+            "required": ["query"],
+        },
+    },
+}
+
+
 # --- TEXT-ONLY FUNCTIONS (SYNCHRONOUS) ---
+def get_ai_answer_with_tools(user_prompt: str) -> str:
+    """
+    Generates a text-based answer from the AI with tool calling capability.
+    AI can decide whether to search for information using Serper.
+    """
+    try:
+        logger.info(f"Starting get_ai_answer_with_tools for prompt: {user_prompt}")
+
+        messages = [
+            {"role": "system", "content": AI_ANSWER_SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ]
+
+        # First API call - AI may decide to use tools
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            tools=[SEARCH_TOOL],
+            tool_choice="auto",  # Let AI decide
+            stream=False,
+        )
+
+        response_message = response.choices[0].message
+        tool_calls = response_message.tool_calls
+
+        # If AI wants to use tools
+        if tool_calls:
+            logger.info(f"AI requested {len(tool_calls)} tool call(s)")
+
+            # Add AI's response to messages
+            messages.append(response_message)
+
+            # Execute each tool call
+            for tool_call in tool_calls:
+                function_name = tool_call.function.name
+                function_args = json.loads(tool_call.function.arguments)
+
+                logger.info(f"Calling {function_name} with args: {function_args}")
+
+                if function_name == "search_with_serper":
+                    query = function_args.get("query")
+                    time_range = function_args.get("time_range", "qdr:y")
+
+                    # Call the search function
+                    search_results = search_with_serper(query, time_range)
+
+                    # Add function result to messages
+                    messages.append(
+                        {
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": function_name,
+                            "content": search_results,
+                        }
+                    )
+
+            # Second API call - AI processes the search results
+            logger.info("Getting final response after tool execution")
+            final_response = client.chat.completions.create(
+                model=MODEL,
+                messages=messages,
+                stream=False,
+            )
+
+            return final_response.choices[0].message.content
+
+        else:
+            # AI decided not to use tools, return direct answer
+            logger.info("AI answered without using tools")
+            return response_message.content
+
+    except Exception as e:
+        logger.error(f"Error in get_ai_answer_with_tools: {e}")
+        return "系統想方加(出錯)，好對唔住"
+
+
 def get_ai_answer(user_prompt: str, search_results: str = None) -> str:
     """
     Generates a text-based answer from the AI.
     If search_results are provided, they will be included in the prompt.
+
+    Note: This is the legacy function. Use get_ai_answer_with_tools() for automatic tool calling.
     """
     try:
         # If search results are provided, include them in the prompt
         if search_results:
             enhanced_prompt = f"""用戶問題：{user_prompt}
 
-網上搜尋結果：
+以下係網上搜尋到嘅最新相關資料（僅供參考）：
 {search_results}
 
-請根據以上搜尋結果，用廣東話詳細解答用戶嘅問題。記住要引用資料來源。"""
+---
+
+請結合你嘅知識庫同上述搜尋資料，經過分析同思考後，用廣東話回答用戶嘅問題。
+
+重要提示：
+- 搜尋資料只係參考材料，唔係要你照抄
+- 運用你嘅知識去理解、分析、補充搜尋結果
+- 提供有見地嘅答案，唔係單純轉述資料
+- 如用咗搜尋資料，可簡單註明「根據最新資料」"""
         else:
             enhanced_prompt = user_prompt
 
